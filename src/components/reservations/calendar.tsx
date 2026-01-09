@@ -1,9 +1,9 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { useState } from 'react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface CalendarProps {
   selectedDate: Date | null
@@ -36,10 +36,10 @@ export function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
     return days
   }
 
-  const navigateMonth = (direction: "prev" | "next") => {
+  const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentMonth((prev) => {
       const newMonth = new Date(prev)
-      if (direction === "prev") {
+      if (direction === 'prev') {
         newMonth.setMonth(prev.getMonth() - 1)
       } else {
         newMonth.setMonth(prev.getMonth() + 1)
@@ -73,20 +73,33 @@ export function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
   }
 
   const days = getDaysInMonth(currentMonth)
-  const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+  const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
   return (
     <Card>
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-foreground">
-            {currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+            {currentMonth.toLocaleDateString('en-US', {
+              month: 'long',
+              year: 'numeric',
+            })}
           </h3>
           <div className="flex gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateMonth("prev")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => navigateMonth('prev')}
+            >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => navigateMonth("next")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => navigateMonth('next')}
+            >
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
@@ -94,7 +107,10 @@ export function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
 
         <div className="grid grid-cols-7 gap-1 mb-2">
           {weekDays.map((day) => (
-            <div key={day} className="text-center text-xs font-medium text-muted-foreground py-2">
+            <div
+              key={day}
+              className="text-center text-xs font-medium text-muted-foreground py-2"
+            >
               {day}
             </div>
           ))}
@@ -108,11 +124,11 @@ export function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
               onClick={() => date && onDateSelect(date)}
               className={`
                 h-10 w-full rounded-md text-sm font-medium transition-colors
-                ${!date ? "invisible" : ""}
-                ${date && isPast(date) ? "text-muted-foreground/40 cursor-not-allowed" : ""}
-                ${date && !isPast(date) && !isSelected(date) ? "hover:bg-accent text-foreground" : ""}
-                ${date && isSelected(date) ? "bg-primary text-primary-foreground" : ""}
-                ${date && isToday(date) && !isSelected(date) ? "border-2 border-primary" : ""}
+                ${!date ? 'invisible' : ''}
+                ${date && isPast(date) ? 'text-muted-foreground/40 cursor-not-allowed' : 'cursor-pointer'}
+                ${date && !isPast(date) && !isSelected(date) ? 'hover:bg-accent text-foreground' : ''}
+                ${date && isSelected(date) ? 'bg-primary text-primary-foreground' : ''}
+                ${date && isToday(date) && !isSelected(date) ? 'border-2 border-primary' : ''}
               `}
             >
               {date?.getDate()}
@@ -123,4 +139,3 @@ export function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
     </Card>
   )
 }
-

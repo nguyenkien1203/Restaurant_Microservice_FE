@@ -38,7 +38,7 @@ export function TimeSlots({ selectedTime, onTimeSelect }: TimeSlotsProps) {
               onClick={() => onTimeSelect(time)}
               className={`
                 py-2 px-3 rounded-md text-sm font-medium transition-colors
-                ${!available ? "bg-muted text-muted-foreground/40 cursor-not-allowed line-through" : ""}
+                ${!available ? "bg-muted text-muted-foreground/40 cursor-not-allowed line-through" : "cursor-pointer"}
                 ${available && selectedTime !== time ? "bg-accent hover:bg-accent/80 text-foreground" : ""}
                 ${selectedTime === time ? "bg-primary text-primary-foreground" : ""}
               `}

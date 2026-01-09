@@ -1,13 +1,16 @@
-"use client"
+'use client'
 
-import { categories } from "../../../lib/menu-data"
+import { categories } from '../../../lib/menu-data'
 
 interface CategoryTabsProps {
   activeCategory: string
   onCategoryChange: (category: string) => void
 }
 
-export function CategoryTabs({ activeCategory, onCategoryChange }: CategoryTabsProps) {
+export function CategoryTabs({
+  activeCategory,
+  onCategoryChange,
+}: CategoryTabsProps) {
   return (
     <div className="flex flex-wrap gap-2">
       {categories.map((category) => (
@@ -19,8 +22,8 @@ export function CategoryTabs({ activeCategory, onCategoryChange }: CategoryTabsP
             flex items-center gap-2
             ${
               activeCategory === category.id
-                ? "bg-primary text-primary-foreground shadow-md"
-                : "bg-card text-card-foreground hover:bg-accent border border-border"
+                ? 'bg-primary text-primary-foreground shadow-md'
+                : 'bg-card text-card-foreground hover:bg-accent border border-border'
             }
           `}
         >
@@ -31,4 +34,3 @@ export function CategoryTabs({ activeCategory, onCategoryChange }: CategoryTabsP
     </div>
   )
 }
-

@@ -1,12 +1,28 @@
 "use client"
 
-import { Link } from "@tanstack/react-router"
+import { Link, useRouterState } from "@tanstack/react-router"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const router = useRouterState()
+  const pathname = router.location.pathname
+
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/menu", label: "Menu" },
+    { to: "/reservation", label: "Reservations" },
+    { to: "/order", label: "Order Online" },
+    { to: "/about", label: "About" },
+  ]
+
+  const isActive = (path: string) => {
+    if (path === "/") return pathname === "/"
+    return pathname === path || pathname.startsWith(path + "/")
+  }
 
   return (
     <header className="bg-background border-b border-border sticky top-0 z-50">
@@ -20,21 +36,20 @@ export default function Header() {
           </div>
 
           <div className="hidden md:flex items-center gap-8">
-            <Link to="/" className="text-sm text-foreground hover:text-primary transition-colors">
-              Home
-            </Link>
-            <Link to={"/menu" as "/"} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              Menu
-            </Link>
-            <Link to={"/reservation" as "/"} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              Reservations
-            </Link>
-            <Link to={"/order" as "/"} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              Order Online
-            </Link>
-            <Link to={"/about" as "/"} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-              About
-            </Link>
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to as "/"}
+                className={cn(
+                  "text-sm transition-colors",
+                  isActive(link.to)
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground hover:text-primary"
+                )}
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           <div className="hidden md:flex items-center gap-3">
@@ -44,15 +59,15 @@ export default function Header() {
               </Button>
             </Link>
             <Link to={"/signup" as "/"}>
-              <Button variant="outline" size="sm">
+              <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                 Sign Up
               </Button>
             </Link>
-            <Link to={"/reservation" as "/"}>
+            {/* <Link to={"/reservation" as "/"}>
               <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
                 Book a Table
               </Button>
-            </Link>
+            </Link> */}
           </div>
 
           <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -63,21 +78,21 @@ export default function Header() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <div className="flex flex-col gap-4">
-              <Link to="/" className="text-sm text-foreground">
-                Home
-              </Link>
-              <Link to={"/menu" as "/"} className="text-sm text-muted-foreground">
-                Menu
-              </Link>
-              <Link to={"/reservation" as "/"} className="text-sm text-muted-foreground">
-                Reservations
-              </Link>
-              <Link to={"/order" as "/"} className="text-sm text-muted-foreground">
-                Order Online
-              </Link>
-              <Link to={"/about" as "/"} className="text-sm text-muted-foreground">
-                About
-              </Link>
+              {navLinks.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to as "/"}
+                  className={cn(
+                    "text-sm transition-colors",
+                    isActive(link.to)
+                      ? "text-primary font-medium"
+                      : "text-muted-foreground"
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {link.label}
+                </Link>
+              ))}
               <div className="flex gap-2 pt-2">
                 <Link to={"/login" as "/"}>
                   <Button variant="ghost" size="sm">

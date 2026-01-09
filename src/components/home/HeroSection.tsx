@@ -1,5 +1,5 @@
-import { Link } from "@tanstack/react-router"
-import { Button } from "@/components/ui/button.tsx"
+import { Link } from '@tanstack/react-router'
+import { Button } from '@/components/ui/button.tsx'
 
 export function HeroSection() {
   return (
@@ -17,20 +17,23 @@ export function HeroSection() {
             Aperture Dining
           </h1>
           <p className="text-lg text-secondary-foreground/90 mb-8 max-w-lg">
-            Experience exceptional cuisine crafted with passion. Every dish tells a story of tradition, innovation, and
-            the finest ingredients.
+            Experience exceptional cuisine crafted with passion. Every dish
+            tells a story of tradition, innovation, and the finest ingredients.
           </p>
           <div className="flex flex-wrap gap-4">
-            <Link to={"/menu" as "/"}>
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Link to={'/menu' as '/'}>
+              <Button
+                size="lg"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 Explore Menu
               </Button>
             </Link>
-            <Link to={"/reservations" as "/"}>
+            <Link to={'/reservations' as '/'}>
               <Button
                 size="lg"
                 variant="outline"
-                className="border-secondary-foreground text-secondary-foreground hover:bg-secondary-foreground/10 bg-transparent"
+                className="border-secondary-foreground/70 text-secondary-foreground bg-secondary-foreground/5 hover:bg-secondary-foreground hover:text-secondary hover:border-secondary-foreground"
               >
                 Book a Table
               </Button>
@@ -41,4 +44,3 @@ export function HeroSection() {
     </section>
   )
 }
-

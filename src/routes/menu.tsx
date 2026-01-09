@@ -81,7 +81,7 @@ interface CartItem extends MenuItem {
                             "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors",
                             activeCategory === category.id
                               ? "bg-primary text-primary-foreground"
-                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                              : "text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer",
                           )}
                         >
                           {category.name}
@@ -94,9 +94,9 @@ interface CartItem extends MenuItem {
   
               {/* Menu Items */}
               <div className="lg:col-span-2">
-                <h2 className="text-xl font-semibold text-foreground mb-4 capitalize">
+                {/* <h2 className="text-xl font-semibold text-foreground mb-4 capitalize">
                   {categories.find((c) => c.id === activeCategory)?.name}
-                </h2>
+                </h2> */}
                 <div className="space-y-4">
                   {filteredItems.map((item) => {
                     const quantity = getItemQuantity(item.id)

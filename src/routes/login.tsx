@@ -1,7 +1,7 @@
 import type React from "react"
 import { useState } from "react"
 import { createFileRoute, Link } from "@tanstack/react-router"
-import { Eye, EyeOff, Mail, Lock } from "lucide-react"
+import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,7 +55,17 @@ function LoginPage() {
       </div>
 
       {/* Right side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div className="w-full lg:w-1/2 flex flex-col p-8">
+        {/* Back to home link */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-4 w-fit cursor-pointer"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to home
+        </Link>
+
+        <div className="flex-1 flex items-center justify-center">
         <div className="w-full max-w-md">
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
@@ -134,7 +144,7 @@ function LoginPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <Checkbox
                 id="remember"
                 checked={rememberMe}
@@ -146,7 +156,7 @@ function LoginPage() {
               >
                 Remember me for 30 days
               </Label>
-            </div>
+            </div> */}
 
             <Button
               type="submit"
@@ -156,7 +166,7 @@ function LoginPage() {
             </Button>
           </form>
 
-          <div className="mt-6">
+          {/* <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-border" />
@@ -176,18 +186,19 @@ function LoginPage() {
                 GitHub
               </Button>
             </div>
-          </div>
+          </div> */}
 
-          <p className="mt-8 text-center text-xs text-muted-foreground">
+          <p className="mt-4 text-center text-xs text-muted-foreground">
             By signing in, you agree to our{" "}
-            <Link to="/terms" className="text-primary hover:underline">
+            <Link to="" className="text-primary hover:underline">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link to="/privacy" className="text-primary hover:underline">
+            <Link to="" className="text-primary hover:underline">
               Privacy Policy
             </Link>
           </p>
+        </div>
         </div>
       </div>
     </div>
