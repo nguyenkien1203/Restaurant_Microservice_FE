@@ -1,25 +1,51 @@
-import type React from "react"
-import { useState } from "react"
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
+import type React from 'react'
+import { useState } from 'react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { useAuth } from '@/lib/auth-context'
 
-export const Route = createFileRoute("/login")({
+export const Route = createFileRoute('/login')({
   component: LoginPage,
 })
 
 function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [rememberMe, setRememberMe] = useState(false)
+  const navigate = useNavigate()
+  const { login, isLoading, error, clearError } = useAuth()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [showPassword, setShowPassword] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle login logic
+    clearError()
+
+    try {
+      await login({ email, password })
+      // Navigate to home page on successful login
+      navigate({ to: '/' })
+    } catch (err) {
+      // Check if the error is about email confirmation
+      const errorMessage = err instanceof Error ? err.message.toLowerCase() : ''
+      if (
+        errorMessage.includes('confirm') ||
+        errorMessage.includes('verification') ||
+        errorMessage.includes('verify') ||
+        errorMessage.includes('not confirmed') ||
+        errorMessage.includes('not verified')
+      ) {
+        // Clear the error and redirect to confirmation page
+        clearError()
+        navigate({
+          to: '/confirm-email',
+          search: { email },
+        })
+      }
+      // Other errors are handled by the auth context
+    }
   }
 
   return (
@@ -66,142 +92,120 @@ function LoginPage() {
         </Link>
 
         <div className="flex-1 flex items-center justify-center">
-        <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
-            <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
-              <span className="text-secondary-foreground font-bold">A</span>
+          <div className="w-full max-w-md">
+            {/* Mobile logo */}
+            <div className="lg:hidden flex items-center justify-center gap-2 mb-8">
+              <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
+                <span className="text-secondary-foreground font-bold">A</span>
+              </div>
+              <span className="font-semibold text-xl text-foreground">
+                Aperture Dining
+              </span>
             </div>
-            <span className="font-semibold text-xl text-foreground">
-              Aperture Dining
-            </span>
-          </div>
 
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              Sign in to your account
-            </h1>
-            <p className="text-muted-foreground">
-              Don't have an account?{" "}
-              <Link
-                to="/signup"
-                className="text-primary hover:underline font-medium"
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold text-foreground mb-2">
+                Sign in to your account
+              </h1>
+              <p className="text-muted-foreground">
+                Don't have an account?{' '}
+                <Link
+                  to="/signup"
+                  className="text-primary hover:underline font-medium"
+                >
+                  Sign up
+                </Link>
+              </p>
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <span className="text-sm text-primary hover:underline cursor-pointer">
+                    Forgot password?
+                  </span>
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10 pr-10"
+                    required
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    disabled={isLoading}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={isLoading}
               >
-                Sign up
-              </Link>
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign in'
+                )}
+              </Button>
+            </form>
+
+            <p className="mt-4 text-center text-xs text-muted-foreground">
+              By signing in, you agree to our{' '}
+              <span className="text-primary hover:underline cursor-pointer">
+                Terms of Service
+              </span>{' '}
+              and{' '}
+              <span className="text-primary hover:underline cursor-pointer">
+                Privacy Policy
+              </span>
             </p>
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  to="/forgot-password"
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 pr-10"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* <div className="flex items-center gap-2">
-              <Checkbox
-                id="remember"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-              />
-              <Label
-                htmlFor="remember"
-                className="text-sm font-normal cursor-pointer"
-              >
-                Remember me for 30 days
-              </Label>
-            </div> */}
-
-            <Button
-              type="submit"
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              Sign in
-            </Button>
-          </form>
-
-          {/* <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-4 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full">
-                Google
-              </Button>
-              <Button variant="outline" className="w-full">
-                GitHub
-              </Button>
-            </div>
-          </div> */}
-
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            By signing in, you agree to our{" "}
-            <Link to="" className="text-primary hover:underline">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link to="" className="text-primary hover:underline">
-              Privacy Policy
-            </Link>
-          </p>
-        </div>
         </div>
       </div>
     </div>
   )
 }
-

@@ -1,17 +1,30 @@
 import type React from 'react'
 import { useState } from 'react'
-import { createFileRoute, Link } from '@tanstack/react-router'
-import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft } from 'lucide-react'
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  User,
+  Phone,
+  MapPin,
+  ArrowLeft,
+  Loader2,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
+import { useAuth } from '@/lib/auth-context'
 
 export const Route = createFileRoute('/signup')({
   component: SignupPage,
 })
 
 function SignupPage() {
+  const navigate = useNavigate()
+  const { register, isLoading, error, clearError } = useAuth()
+
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -19,20 +32,53 @@ function SignupPage() {
     lastName: '',
     email: '',
     phone: '',
+    address: '',
     password: '',
     confirmPassword: '',
   })
-  const [agreeTerms, setAgreeTerms] = useState(false)
-  const [subscribeNewsletter, setSubscribeNewsletter] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value })
+    setValidationError(null)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle signup logic
+    clearError()
+    setValidationError(null)
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setValidationError('Passwords do not match')
+      return
+    }
+
+    // Validate password length
+    if (formData.password.length < 8) {
+      setValidationError('Password must be at least 8 characters')
+      return
+    }
+
+    try {
+      const result = await register({
+        email: formData.email,
+        password: formData.password,
+        fullName: `${formData.firstName} ${formData.lastName}`.trim(),
+        phone: formData.phone,
+        address: formData.address,
+      })
+      // Navigate to email confirmation page with the email as a query param
+      navigate({
+        to: '/confirm-email',
+        search: { email: result.email },
+      })
+    } catch {
+      // Error is handled by the auth context
+    }
   }
+
+  const displayError = validationError || error
 
   return (
     <div className="fixed inset-0 z-50 min-h-screen flex bg-background">
@@ -124,6 +170,13 @@ function SignupPage() {
               </p>
             </div>
 
+            {/* Error message */}
+            {displayError && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                <p className="text-sm text-destructive">{displayError}</p>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -139,6 +192,7 @@ function SignupPage() {
                       onChange={handleChange}
                       className="pl-10"
                       required
+                      disabled={isLoading}
                     />
                   </div>
                 </div>
@@ -152,6 +206,7 @@ function SignupPage() {
                     value={formData.lastName}
                     onChange={handleChange}
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -169,6 +224,7 @@ function SignupPage() {
                     onChange={handleChange}
                     className="pl-10"
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -185,6 +241,24 @@ function SignupPage() {
                     value={formData.phone}
                     onChange={handleChange}
                     className="pl-10"
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="address">Address</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="address"
+                    name="address"
+                    type="text"
+                    placeholder="123 Main St, City, State"
+                    value={formData.address}
+                    onChange={handleChange}
+                    className="pl-10"
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -202,11 +276,13 @@ function SignupPage() {
                     onChange={handleChange}
                     className="pl-10 pr-10"
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    disabled={isLoading}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -233,11 +309,13 @@ function SignupPage() {
                     onChange={handleChange}
                     className="pl-10 pr-10"
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    disabled={isLoading}
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="h-4 w-4" />
@@ -248,92 +326,32 @@ function SignupPage() {
                 </div>
               </div>
 
-              {/* <div className="space-y-3">
-                <div className="flex items-start gap-2">
-                  <Checkbox
-                    id="terms"
-                    checked={agreeTerms}
-                    onCheckedChange={(checked) =>
-                      setAgreeTerms(checked as boolean)
-                    }
-                    className="mt-1"
-                  />
-                  <Label
-                    htmlFor="terms"
-                    className="text-sm font-normal cursor-pointer leading-relaxed"
-                  >
-                    I agree to the{' '}
-                    <Link to="/terms" className="text-primary hover:underline">
-                      Terms of Service
-                    </Link>{' '}
-                    and{' '}
-                    <Link
-                      to="/privacy"
-                      className="text-primary hover:underline"
-                    >
-                      Privacy Policy
-                    </Link>
-                  </Label>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Checkbox
-                    id="newsletter"
-                    checked={subscribeNewsletter}
-                    onCheckedChange={(checked) =>
-                      setSubscribeNewsletter(checked as boolean)
-                    }
-                    className="mt-1"
-                  />
-                  <Label
-                    htmlFor="newsletter"
-                    className="text-sm font-normal cursor-pointer leading-relaxed"
-                  >
-                    Subscribe to our newsletter for exclusive offers and updates
-                  </Label>
-                </div>
-              </div> */}
-
               <Button
                 type="submit"
                 className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                // disabled={!agreeTerms}
+                disabled={isLoading}
               >
-                Create account
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Creating account...
+                  </>
+                ) : (
+                  'Create account'
+                )}
               </Button>
             </form>
 
             <p className="mt-4 text-center text-xs text-muted-foreground">
-            By signing up, you agree to our{" "}
-            <Link to="" className="text-primary hover:underline">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link to="" className="text-primary hover:underline">
-              Privacy Policy
-            </Link>
-          </p>
-
-            {/* <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-background px-4 text-muted-foreground">
-                  Or sign up with
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-4">
-              <Button variant="outline" className="w-full">
-                Google
-              </Button>
-              <Button variant="outline" className="w-full">
-                GitHub
-              </Button>
-            </div>
-          </div> */}
+              By signing up, you agree to our{' '}
+              <span className="text-primary hover:underline cursor-pointer">
+                Terms of Service
+              </span>{' '}
+              and{' '}
+              <span className="text-primary hover:underline cursor-pointer">
+                Privacy Policy
+              </span>
+            </p>
           </div>
         </div>
       </div>
