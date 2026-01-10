@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -77,14 +77,17 @@ export function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
 
   return (
     <Card>
-      <CardContent className="p-4">
+      <CardContent className="px-4">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-foreground">
-            {currentMonth.toLocaleDateString('en-US', {
-              month: 'long',
-              year: 'numeric',
-            })}
-          </h3>
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 text-muted-foreground" />
+            <h3 className="font-semibold text-foreground">
+              {currentMonth.toLocaleDateString('en-US', {
+                month: 'long',
+                year: 'numeric',
+              })}
+            </h3>
+          </div>
           <div className="flex gap-1">
             <Button
               variant="ghost"
