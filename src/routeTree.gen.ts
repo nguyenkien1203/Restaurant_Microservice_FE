@@ -12,9 +12,11 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReservationRouteImport } from './routes/reservation'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as OrderConfirmationRouteImport } from './routes/order-confirmation'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
+import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
@@ -43,6 +45,11 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrderConfirmationRoute = OrderConfirmationRouteImport.update({
+  id: '/order-confirmation',
+  path: '/order-confirmation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MenuRoute = MenuRouteImport.update({
   id: '/menu',
   path: '/menu',
@@ -56,6 +63,11 @@ const LoginRoute = LoginRouteImport.update({
 const ConfirmEmailRoute = ConfirmEmailRouteImport.update({
   id: '/confirm-email',
   path: '/confirm-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutRoute = CheckoutRouteImport.update({
+  id: '/checkout',
+  path: '/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -122,9 +134,11 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/login': typeof LoginRoute
   '/menu': typeof MenuRoute
+  '/order-confirmation': typeof OrderConfirmationRoute
   '/profile': typeof ProfileRoute
   '/reservation': typeof ReservationRoute
   '/signup': typeof SignupRoute
@@ -141,9 +155,11 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/checkout': typeof CheckoutRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/login': typeof LoginRoute
   '/menu': typeof MenuRoute
+  '/order-confirmation': typeof OrderConfirmationRoute
   '/profile': typeof ProfileRoute
   '/reservation': typeof ReservationRoute
   '/signup': typeof SignupRoute
@@ -162,9 +178,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/checkout': typeof CheckoutRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/login': typeof LoginRoute
   '/menu': typeof MenuRoute
+  '/order-confirmation': typeof OrderConfirmationRoute
   '/profile': typeof ProfileRoute
   '/reservation': typeof ReservationRoute
   '/signup': typeof SignupRoute
@@ -184,9 +202,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/checkout'
     | '/confirm-email'
     | '/login'
     | '/menu'
+    | '/order-confirmation'
     | '/profile'
     | '/reservation'
     | '/signup'
@@ -203,9 +223,11 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/checkout'
     | '/confirm-email'
     | '/login'
     | '/menu'
+    | '/order-confirmation'
     | '/profile'
     | '/reservation'
     | '/signup'
@@ -223,9 +245,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/checkout'
     | '/confirm-email'
     | '/login'
     | '/menu'
+    | '/order-confirmation'
     | '/profile'
     | '/reservation'
     | '/signup'
@@ -244,9 +268,11 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  CheckoutRoute: typeof CheckoutRoute
   ConfirmEmailRoute: typeof ConfirmEmailRoute
   LoginRoute: typeof LoginRoute
   MenuRoute: typeof MenuRoute
+  OrderConfirmationRoute: typeof OrderConfirmationRoute
   ProfileRoute: typeof ProfileRoute
   ReservationRoute: typeof ReservationRoute
   SignupRoute: typeof SignupRoute
@@ -276,6 +302,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/order-confirmation': {
+      id: '/order-confirmation'
+      path: '/order-confirmation'
+      fullPath: '/order-confirmation'
+      preLoaderRoute: typeof OrderConfirmationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/menu': {
       id: '/menu'
       path: '/menu'
@@ -295,6 +328,13 @@ declare module '@tanstack/react-router' {
       path: '/confirm-email'
       fullPath: '/confirm-email'
       preLoaderRoute: typeof ConfirmEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -413,9 +453,11 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  CheckoutRoute: CheckoutRoute,
   ConfirmEmailRoute: ConfirmEmailRoute,
   LoginRoute: LoginRoute,
   MenuRoute: MenuRoute,
+  OrderConfirmationRoute: OrderConfirmationRoute,
   ProfileRoute: ProfileRoute,
   ReservationRoute: ReservationRoute,
   SignupRoute: SignupRoute,

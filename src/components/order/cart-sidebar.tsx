@@ -1,21 +1,20 @@
 'use client'
 
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import {
   Minus,
   Plus,
   Trash2,
   Handbag,
   ShoppingBag,
-  UtensilsCrossed,
-  Clock,
   Package2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
 
-export type OrderType = 'DINE_IN' | 'PRE_ORDER' | 'TAKEAWAY' | 'DELIVERY'
+export type OrderType = 'PRE_ORDER' | 'TAKEAWAY' | 'DELIVERY'
 
 const orderTypeOptions: {
   value: OrderType
@@ -23,21 +22,15 @@ const orderTypeOptions: {
   icon: React.ReactNode
 }[] = [
   {
-    value: 'DINE_IN',
-    label: 'Dine In',
-    icon: <UtensilsCrossed className="h-4 w-4" />,
-  },
-  {
-    value: 'PRE_ORDER',
-    label: 'Pre-Order',
-    icon: <Clock className="h-4 w-4" />,
-  },
-  {
     value: 'TAKEAWAY',
     label: 'Takeaway',
     icon: <Handbag className="h-4 w-4" />,
   },
-  { value: 'DELIVERY', label: 'Delivery', icon: <Package2 className="h-4 w-4" /> },
+  {
+    value: 'DELIVERY',
+    label: 'Delivery',
+    icon: <Package2 className="h-4 w-4" />,
+  },
 ]
 
 interface CartItem extends NormalizedMenuItem {
@@ -55,7 +48,8 @@ export function CartSidebar({
   onUpdateQuantity,
   onRemoveItem,
 }: CartSidebarProps) {
-  const [orderType, setOrderType] = useState<OrderType>('DINE_IN')
+  const navigate = useNavigate()
+  const [orderType, setOrderType] = useState<OrderType>('TAKEAWAY')
 
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -72,7 +66,7 @@ export function CartSidebar({
           <p className="text-sm font-medium text-card-foreground mb-3">
             How would you like your order?
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col gap-2">
             {orderTypeOptions.map((option) => (
               <button
                 key={option.value}
@@ -170,10 +164,20 @@ export function CartSidebar({
                 </div>
               </div>
 
-              <Button className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90">
-                {orderType === 'DELIVERY'
-                  ? 'Proceed to Checkout'
-                  : 'Place Order'}
+              <Button
+                className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90"
+                onClick={() => {
+                  if (orderType === 'DELIVERY' || orderType === 'TAKEAWAY') {
+                    navigate({ to: '/checkout' })
+                  } else {
+                    navigate({
+                      to: '/order-confirmation',
+                      search: { orderId: `ORD-${Date.now()}` },
+                    })
+                  }
+                }}
+              >
+                Proceed to Checkout
               </Button>
             </>
           )}
