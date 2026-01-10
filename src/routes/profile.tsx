@@ -687,7 +687,7 @@ function ProfileSettingsContent({
       )}
 
       <Card>
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="px-6 py-2 space-y-6">
           <div className="flex items-center gap-4">
             <div className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
               <span className="text-3xl font-semibold text-primary">
@@ -731,34 +731,6 @@ function ProfileSettingsContent({
                   Email cannot be changed
                 </p>
               )}
-            </div>
-
-            {/* Role (read-only) */}
-            <div className="py-3 border-b border-border">
-              <Label className="font-medium text-foreground">
-                Account Role
-              </Label>
-              <div className="flex items-center gap-2 mt-1">
-                {isAdmin() ? (
-                  <span className="inline-flex items-center gap-1.5 text-sm">
-                    <Shield className="h-4 w-4 text-amber-500" />
-                    <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20">
-                      Administrator
-                    </Badge>
-                  </span>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 text-sm">
-                    <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20">
-                      Member
-                    </Badge>
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {user?.role === 'ROLE_ADMIN'
-                  ? 'You have full admin access to manage the restaurant'
-                  : 'Standard member account with access to reservations and orders'}
-              </p>
             </div>
 
             {/* Phone Number */}
@@ -808,11 +780,55 @@ function ProfileSettingsContent({
       {/* Account Info */}
       {profile && (
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="px-6 py-2">
             <h3 className="font-semibold text-foreground mb-4">
               Account Information
             </h3>
-            <div className="grid gap-3 text-sm">
+            <div className="grid gap-4 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Account Role</span>
+                {isAdmin() ? (
+                  <div className="relative group">
+                    <span className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <Shield className="h-4 w-4 text-amber-500" />
+                      <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20">
+                        Administrator
+                      </Badge>
+                    </span>
+                    {/* Custom Tooltip */}
+                    <div className="absolute right-0 bottom-full mb-2 px-3 py-2 bg-foreground/70 text-background text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-56 z-50">
+                      <div className="flex items-start gap-2">
+                        <Shield className="h-3.5 w-3.5 text-amber-400 mt-0.5 shrink-0" />
+                        <span>
+                          You have full admin access to manage the restaurant
+                        </span>
+                      </div>
+                      {/* Arrow */}
+                      <div className="absolute right-4 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-foreground" />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative group">
+                    <span className="inline-flex items-center gap-1.5 cursor-pointer">
+                      <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20">
+                        Member
+                      </Badge>
+                    </span>
+                    {/* Custom Tooltip */}
+                    <div className="absolute right-0 bottom-full mb-2 px-3 py-2 bg-foreground/70 text-background text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 w-60 z-50">
+                      <div className="flex items-start gap-2">
+                        <UserCog className="h-3.5 w-3.5 text-blue-400 mt-0.5 shrink-0" />
+                        <span>
+                          Standard member account with access to reservations
+                          and orders
+                        </span>
+                      </div>
+                      {/* Arrow */}
+                      <div className="absolute right-4 top-full w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-foreground/70" />
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Member since</span>
                 <span className="text-foreground">

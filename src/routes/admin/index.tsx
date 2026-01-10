@@ -12,18 +12,23 @@ import {
   Edit,
   Settings,
 } from 'lucide-react'
+import { useAuth } from '@/lib/auth-context'
 
 export const Route = createFileRoute('/admin/')({
   component: AdminDashboard,
 })
 
 function AdminDashboard() {
+  const { user } = useAuth()
+  const displayName = user?.fullName || user?.email?.split('@')[0] || 'Admin'
+  const firstName = displayName.split(' ')[0]
+  
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
         <p className="text-muted-foreground mt-2">
-          Welcome back! Here's what's happening at your restaurant today.
+          Welcome back, {firstName}! Here's what's happening at your restaurant today.
         </p>
       </div>
 
