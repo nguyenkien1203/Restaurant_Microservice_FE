@@ -19,5 +19,8 @@ export const API_ENDPOINTS = {
     all: `${API_BASE_URL}/api/menu/all`,
     byCategory: (category: string) =>
       `${API_BASE_URL}/api/menu/all?category=${category}`,
+    // Admin endpoints (require auth)
+    admin: `${API_BASE_URL}/api/menu`,
+    adminById: (id: string) => `${API_BASE_URL}/api/menu/${id}`,
   },
 } as const

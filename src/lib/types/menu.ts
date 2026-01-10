@@ -16,7 +16,7 @@ export interface MenuItem {
   }
   
   // Normalized menu item for frontend use
-  export interface NormalizedMenuItem {
+export interface NormalizedMenuItem {
     id: string
     name: string
     description: string
@@ -28,4 +28,4 @@ export interface MenuItem {
     isVegan?: boolean
     preparationTime?: number
     isAvailable: boolean
-  }
+}

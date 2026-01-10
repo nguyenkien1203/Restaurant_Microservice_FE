@@ -56,3 +56,23 @@ export async function fetchCategories(): Promise<string[]> {
   const categories = [...new Set(items.map((item) => item.category))]
   return categories
 }
+
+// ============ Admin API Functions (require auth) ============
+
+// Fetch all menu items for admin (includes unavailable items)
+export async function fetchAdminMenuItems(): Promise<NormalizedMenuItem[]> {
+  const response = await fetch(`${API_BASE_URL}/api/menu`, {
+    credentials: 'include', // Include auth cookies
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized: Please log in as admin')
+    }
+    throw new Error('Failed to fetch menu items')
+  }
+
+  const data: MenuItem[] = await response.json()
+  // Return all items for admin (don't filter by availability)
+  return data.map(normalizeMenuItem)
+}
