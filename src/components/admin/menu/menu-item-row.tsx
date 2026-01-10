@@ -1,17 +1,10 @@
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import {
-  Flame,
-  Leaf,
-  Clock,
-  Zap,
-  CheckCircle,
-  XCircle,
-  Pencil,
-  Trash2,
-} from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { Flame, Leaf, Clock, Zap, Pencil, Trash2, Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
+import { MENU_TAGS } from '@/lib/types/menu'
 
 interface MenuItemRowProps {
   item: NormalizedMenuItem
@@ -19,6 +12,11 @@ interface MenuItemRowProps {
   onToggleExpand: () => void
   onEdit?: (item: NormalizedMenuItem) => void
   onDelete?: (item: NormalizedMenuItem) => void
+  onToggleAvailability?: (
+    item: NormalizedMenuItem,
+    isAvailable: boolean,
+  ) => void
+  isTogglingAvailability?: boolean
 }
 
 export function MenuItemRow({
@@ -27,6 +25,8 @@ export function MenuItemRow({
   onToggleExpand,
   onEdit,
   onDelete,
+  onToggleAvailability,
+  isTogglingAvailability = false,
 }: MenuItemRowProps) {
   return (
     <TableRow
@@ -70,7 +70,11 @@ export function MenuItemRow({
         <MenuItemDetails item={item} />
       </TableCell>
       <TableCell>
-        <MenuItemStatus isAvailable={item.isAvailable} />
+        <MenuItemStatus
+          item={item}
+          onToggle={onToggleAvailability}
+          isToggling={isTogglingAvailability}
+        />
       </TableCell>
       <TableCell className="text-right">
         <MenuItemActions item={item} onEdit={onEdit} onDelete={onDelete} />
@@ -80,14 +84,17 @@ export function MenuItemRow({
 }
 
 function MenuItemDetails({ item }: { item: NormalizedMenuItem }) {
+  const isSpicy = item.tags.includes(MENU_TAGS.SPICY)
+  const isVegan = item.tags.includes(MENU_TAGS.VEGAN)
+
   return (
     <div className="flex items-center gap-2">
-      {item.isSpicy && (
+      {isSpicy && (
         <span className="bg-red-100 text-red-600 p-1 rounded" title="Spicy">
           <Flame className="h-3 w-3" />
         </span>
       )}
-      {item.isVegan && (
+      {isVegan && (
         <span className="bg-green-100 text-green-600 p-1 rounded" title="Vegan">
           <Leaf className="h-3 w-3" />
         </span>
@@ -114,26 +121,37 @@ function MenuItemDetails({ item }: { item: NormalizedMenuItem }) {
   )
 }
 
-function MenuItemStatus({ isAvailable }: { isAvailable: boolean }) {
+interface MenuItemStatusProps {
+  item: NormalizedMenuItem
+  onToggle?: (item: NormalizedMenuItem, isAvailable: boolean) => void
+  isToggling?: boolean
+}
+
+function MenuItemStatus({ item, onToggle, isToggling }: MenuItemStatusProps) {
+  const handleToggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+  }
+
   return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium',
-        isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700',
-      )}
-    >
-      {isAvailable ? (
-        <>
-          <CheckCircle className="h-3 w-3" />
-          Available
-        </>
+    <div className="flex items-center gap-2" onClick={handleToggle}>
+      {isToggling ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
       ) : (
-        <>
-          <XCircle className="h-3 w-3" />
-          Unavailable
-        </>
+        <Switch
+          checked={item.isAvailable}
+          onCheckedChange={(checked) => onToggle?.(item, checked)}
+          disabled={isToggling}
+        />
       )}
-    </span>
+      <span
+        className={cn(
+          'text-xs font-medium',
+          item.isAvailable ? 'text-green-600' : 'text-muted-foreground',
+        )}
+      >
+        {item.isAvailable ? 'Available' : 'Unavailable'}
+      </span>
+    </div>
   )
 }
 

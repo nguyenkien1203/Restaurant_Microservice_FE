@@ -14,10 +14,9 @@ export function normalizeMenuItem(item: MenuItem): NormalizedMenuItem {
     description: item.description,
     price: item.price,
     image: item.imageUrl,
-    category: item.category.toLowerCase(), // Normalize category to lowercase
+    category: item.category.toLowerCase(),
     calories: item.calories,
-    isSpicy: item.isSpicy,
-    isVegan: item.isVegan,
+    tags: item.tags ?? [],
     preparationTime: item.preparationTime,
     isAvailable: item.isAvailable === 'true',
   }
@@ -150,4 +149,30 @@ export async function deleteMenuItem(id: string): Promise<void> {
     }
     throw new Error('Failed to delete menu item')
   }
+}
+
+// Toggle menu item availability
+export async function toggleMenuItemAvailability(
+  id: string,
+  isAvailable: boolean,
+): Promise<NormalizedMenuItem> {
+  const response = await fetch(`${API_BASE_URL}/api/menu/${id}/toggle-availability`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ isAvailable }),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized: Please log in as admin')
+    }
+    if (response.status === 404) {
+      throw new Error('Menu item not found')
+    }
+    throw new Error('Failed to toggle availability')
+  }
+
+  const item: MenuItem = await response.json()
+  return normalizeMenuItem(item)
 }

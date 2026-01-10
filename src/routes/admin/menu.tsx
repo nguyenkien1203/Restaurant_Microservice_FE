@@ -15,9 +15,11 @@ import {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  toggleMenuItemAvailability,
 } from '@/lib/api/menu'
 import { useState, useMemo, useCallback } from 'react'
 import type { NormalizedMenuItem, MenuItemFormData } from '@/lib/types/menu'
+import { MENU_TAGS } from '@/lib/types/menu'
 import {
   AdminPageHeader,
   MenuFilters,
@@ -134,8 +136,7 @@ function formDataToRequest(data: MenuItemFormData) {
       ? parseInt(data.preparationTime)
       : undefined,
     calories: data.calories ? parseInt(data.calories) : undefined,
-    isSpicy: data.isSpicy,
-    isVegan: data.isVegan,
+    tags: data.tags,
   }
 }
 
@@ -153,6 +154,7 @@ function AdminMenu() {
   const [deletingItem, setDeletingItem] = useState<NormalizedMenuItem | null>(
     null,
   )
+  const [togglingItemId, setTogglingItemId] = useState<string | null>(null)
 
   const {
     data: menuItems = [],
@@ -195,6 +197,20 @@ function AdminMenu() {
     },
   })
 
+  const toggleAvailabilityMutation = useMutation({
+    mutationFn: ({ id, isAvailable }: { id: string; isAvailable: boolean }) =>
+      toggleMenuItemAvailability(id, isAvailable),
+    onMutate: ({ id }) => {
+      setTogglingItemId(id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminMenuItems'] })
+    },
+    onSettled: () => {
+      setTogglingItemId(null)
+    },
+  })
+
   const categories = useMemo(() => {
     return Array.from(new Set(menuItems.map((item) => item.category))).sort(
       (a, b) => {
@@ -223,8 +239,10 @@ function AdminMenu() {
           (filters.statusFilter === 'unavailable' && !item.isAvailable)
         const matchesDietary =
           filters.dietaryFilters.length === 0 ||
-          (filters.dietaryFilters.includes('spicy') && item.isSpicy) ||
-          (filters.dietaryFilters.includes('vegan') && item.isVegan)
+          (filters.dietaryFilters.includes('spicy') &&
+            item.tags.includes(MENU_TAGS.SPICY)) ||
+          (filters.dietaryFilters.includes('vegan') &&
+            item.tags.includes(MENU_TAGS.VEGAN))
         return (
           matchesSearch && matchesCategory && matchesStatus && matchesDietary
         )
@@ -298,6 +316,13 @@ function AdminMenu() {
   const handleDeleteItem = (item: NormalizedMenuItem) => {
     setDeletingItem(item)
     setDeleteDialogOpen(true)
+  }
+
+  const handleToggleAvailability = (
+    item: NormalizedMenuItem,
+    isAvailable: boolean,
+  ) => {
+    toggleAvailabilityMutation.mutate({ id: item.id, isAvailable })
   }
 
   const handleFormSubmit = async (data: MenuItemFormData) => {
@@ -438,6 +463,8 @@ function AdminMenu() {
                     }
                     onEdit={handleEditItem}
                     onDelete={handleDeleteItem}
+                    onToggleAvailability={handleToggleAvailability}
+                    isTogglingAvailability={togglingItemId === item.id}
                   />
                 ))}
               </TableBody>

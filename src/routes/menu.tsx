@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { CartSidebar } from '@/components/order/cart-sidebar'
 import { fetchMenuItems } from '@/lib/api/menu'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
+import { MENU_TAGS } from '@/lib/types/menu'
 import { cn } from '../lib/utils'
 import { Plus, Minus, Loader2, Flame, Leaf, X, Clock, Zap } from 'lucide-react'
 
@@ -188,7 +189,7 @@ export default function MenuPage() {
                             />
                             {/* Dietary badges on image */}
                             <div className="absolute top-1 left-1 flex gap-1">
-                              {item.isSpicy && (
+                              {item.tags.includes(MENU_TAGS.SPICY) && (
                                 <span
                                   className="bg-red-500 text-white p-1 rounded-full"
                                   title="Spicy"
@@ -196,7 +197,7 @@ export default function MenuPage() {
                                   <Flame className="h-3 w-3" />
                                 </span>
                               )}
-                              {item.isVegan && (
+                              {item.tags.includes(MENU_TAGS.VEGAN) && (
                                 <span
                                   className="bg-green-500 text-white p-1 rounded-full"
                                   title="Vegan"
@@ -320,13 +321,13 @@ export default function MenuPage() {
 
               {/* Item details */}
               <div className="flex gap-8 mb-6">
-                {selectedItem.isSpicy && (
+                {selectedItem.tags.includes(MENU_TAGS.SPICY) && (
                   <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
                     <Flame className="h-3 w-3" />
                     Spicy
                   </span>
                 )}
-                {selectedItem.isVegan && (
+                {selectedItem.tags.includes(MENU_TAGS.VEGAN) && (
                   <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
                     <Leaf className="h-3 w-3" />
                     Vegan

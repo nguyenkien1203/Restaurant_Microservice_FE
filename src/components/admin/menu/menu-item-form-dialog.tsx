@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Select } from '@/components/ui/select'
 import { Loader2 } from 'lucide-react'
 import type { NormalizedMenuItem, MenuItemFormData } from '@/lib/types/menu'
+import { MENU_TAGS } from '@/lib/types/menu'
 
 const CATEGORY_OPTIONS = [
   { value: 'Appetizers', label: 'Appetizers' },
@@ -31,8 +32,7 @@ const DEFAULT_FORM_DATA: MenuItemFormData = {
   isAvailable: true,
   preparationTime: '',
   calories: '',
-  isSpicy: false,
-  isVegan: false,
+  tags: [],
 }
 
 interface MenuItemFormDialogProps {
@@ -70,8 +70,7 @@ export function MenuItemFormDialog({
         isAvailable: item.isAvailable,
         preparationTime: item.preparationTime?.toString() || '',
         calories: item.calories?.toString() || '',
-        isSpicy: item.isSpicy || false,
-        isVegan: item.isVegan || false,
+        tags: item.tags || [],
       })
     } else if (open) {
       setFormData(DEFAULT_FORM_DATA)
@@ -243,37 +242,36 @@ export function MenuItemFormDialog({
             />
           </div>
 
-          {/* Toggles */}
-          <div className="flex flex-wrap gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <Checkbox
-                checked={formData.isAvailable}
-                onCheckedChange={(checked) =>
-                  updateField('isAvailable', checked === true)
-                }
-              />
-              <span className="text-sm">Available</span>
-            </label>
+          {/* Tags */}
+          <div className="flex items-center gap-12">
+            <Label>Tags</Label>
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={formData.tags.includes(MENU_TAGS.SPICY)}
+                  onCheckedChange={(checked) => {
+                    const newTags = checked
+                      ? [...formData.tags, MENU_TAGS.SPICY]
+                      : formData.tags.filter((t) => t !== MENU_TAGS.SPICY)
+                    updateField('tags', newTags)
+                  }}
+                />
+                <span className="text-sm">Spicy</span>
+              </label>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <Checkbox
-                checked={formData.isSpicy}
-                onCheckedChange={(checked) =>
-                  updateField('isSpicy', checked === true)
-                }
-              />
-              <span className="text-sm">Spicy</span>
-            </label>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <Checkbox
-                checked={formData.isVegan}
-                onCheckedChange={(checked) =>
-                  updateField('isVegan', checked === true)
-                }
-              />
-              <span className="text-sm">Vegan</span>
-            </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox
+                  checked={formData.tags.includes(MENU_TAGS.VEGAN)}
+                  onCheckedChange={(checked) => {
+                    const newTags = checked
+                      ? [...formData.tags, MENU_TAGS.VEGAN]
+                      : formData.tags.filter((t) => t !== MENU_TAGS.VEGAN)
+                    updateField('tags', newTags)
+                  }}
+                />
+                <span className="text-sm">Vegan</span>
+              </label>
+            </div>
           </div>
         </DialogContent>
 

@@ -7,8 +7,7 @@ export interface MenuItem {
   imageUrl: string
   category: string
   calories?: number
-  isSpicy?: boolean
-  isVegan?: boolean
+  tags?: string[]
   preparationTime?: number
   isAvailable: string
   createdAt: string
@@ -24,8 +23,7 @@ export interface NormalizedMenuItem {
   image: string
   category: string
   calories?: number
-  isSpicy?: boolean
-  isVegan?: boolean
+  tags: string[]
   preparationTime?: number
   isAvailable: boolean
 }
@@ -40,8 +38,7 @@ export interface CreateMenuItemRequest {
   isAvailable?: boolean
   preparationTime?: number
   calories?: number
-  isSpicy?: boolean
-  isVegan?: boolean
+  tags?: string[]
 }
 
 export interface UpdateMenuItemRequest {
@@ -53,8 +50,7 @@ export interface UpdateMenuItemRequest {
   isAvailable?: boolean
   preparationTime?: number
   calories?: number
-  isSpicy?: boolean
-  isVegan?: boolean
+  tags?: string[]
 }
 
 // Form data for the menu item form (used in frontend)
@@ -67,6 +63,13 @@ export interface MenuItemFormData {
   isAvailable: boolean
   preparationTime: string
   calories: string
-  isSpicy: boolean
-  isVegan: boolean
+  tags: string[]
 }
+
+// Tag constants
+export const MENU_TAGS = {
+  SPICY: 'Spicy',
+  VEGAN: 'Vegan',
+} as const
+
+export type MenuTag = (typeof MENU_TAGS)[keyof typeof MENU_TAGS]
