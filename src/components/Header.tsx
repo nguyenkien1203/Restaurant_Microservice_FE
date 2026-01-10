@@ -37,8 +37,8 @@ export default function Header() {
     return pathname === path || pathname.startsWith(path + '/')
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate({ to: '/' })
     setMobileMenuOpen(false)
   }

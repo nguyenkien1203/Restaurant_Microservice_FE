@@ -12,6 +12,7 @@ import {
   confirmEmailApi,
   resendCodeApi,
   getAuthMeApi,
+  logoutApi,
 } from './api/auth'
 import { getMyProfile } from './api/profile'
 import type {
@@ -174,7 +175,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // Call the logout API to clear server-side cookies
+    try {
+      await logoutApi()
+    } catch (err) {
+      // Even if API fails, still clear local state
+      console.warn('Logout API failed:', err)
+    }
+    // Clear local state
     setUser(null)
     clearStoredUser()
     setError(null)

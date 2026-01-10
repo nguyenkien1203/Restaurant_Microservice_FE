@@ -35,8 +35,8 @@ export function AdminSidebar() {
   const displayName = user?.fullName || user?.email?.split('@')[0] || 'Admin'
   const displayInitial = displayName.charAt(0).toUpperCase()
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate({ to: '/login' })
   }
 

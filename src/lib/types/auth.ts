@@ -55,7 +55,7 @@ export interface AuthContextType extends AuthState {
   register: (data: RegisterRequest) => Promise<{ email: string }>
   confirmEmail: (data: ConfirmEmailRequest) => Promise<void>
   resendCode: (email: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   clearError: () => void
   getToken: () => string | null
   updateUser: (updates: Partial<User>) => void

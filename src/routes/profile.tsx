@@ -129,8 +129,8 @@ function ProfilePage() {
   const nextRewardPoints = 2000
   const progressPercentage = (loyaltyPoints / nextRewardPoints) * 100
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     navigate({ to: '/' })
   }
 
@@ -149,8 +149,11 @@ function ProfilePage() {
       profileError.statusCode === 401
     ) {
       // Session expired - clear local state and redirect to login
-      logout()
-      navigate({ to: '/login' })
+      const handleSessionExpired = async () => {
+        await logout()
+        navigate({ to: '/login' })
+      }
+      handleSessionExpired()
     }
   }, [profileError, logout, navigate])
 

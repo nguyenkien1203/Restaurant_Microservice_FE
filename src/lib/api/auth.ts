@@ -114,3 +114,22 @@ export async function getAuthMeApi(): Promise<AuthMeResponse> {
 
   return response.json()
 }
+
+// Logout and clear auth cookies on the server
+export async function logoutApi(): Promise<void> {
+  const response = await fetch(API_ENDPOINTS.auth.logout, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include cookies so server can clear them
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new AuthApiError(
+      errorData.message || 'Logout failed.',
+      response.status
+    )
+  }
+}

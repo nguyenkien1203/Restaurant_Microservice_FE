@@ -10,6 +10,7 @@ export const API_ENDPOINTS = {
     confirm: `${API_BASE_URL}/api/auth/confirm`,
     resendCode: `${API_BASE_URL}/api/auth/resend-code`,
     me: `${API_BASE_URL}/api/auth/me`, // Get user role
+    logout: `${API_BASE_URL}/api/auth/logout`, // Logout and clear cookies
   },
   profile: {
     me: `${API_BASE_URL}/api/profiles/me`,
