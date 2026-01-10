@@ -64,10 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await loginApi(credentials)
+      // Extract token from response (handle different possible field names)
+      const token =
+        response.token ||
+        response.accessToken ||
+        response.jwt ||
+        response.securedLoginToken
       const userData: User = {
         email: response.email,
+        fullName: response.fullName || response.email.split('@')[0],
         role: response.role,
         active: response.active,
+        token: token,
       }
       setUser(userData)
       storeUser(userData)
@@ -149,6 +157,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null)
   }, [])
 
+  const getToken = useCallback(() => {
+    return user?.token || null
+  }, [user])
+
+  // Update user data (e.g., after fetching profile)
+  const updateUser = useCallback((updates: Partial<User>) => {
+    setUser((currentUser) => {
+      if (!currentUser) return currentUser
+      const updatedUser = { ...currentUser, ...updates }
+      storeUser(updatedUser)
+      return updatedUser
+    })
+  }, [])
+
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
@@ -160,6 +182,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     resendCode,
     logout,
     clearError,
+    getToken,
+    updateUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

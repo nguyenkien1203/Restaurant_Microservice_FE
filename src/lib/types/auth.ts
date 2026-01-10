@@ -2,8 +2,10 @@
 
 export interface User {
   email: string
+  fullName: string
   role: string | null
   active: boolean
+  token?: string
 }
 
 export interface LoginRequest {
@@ -21,8 +23,13 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   email: string
+  fullName: string
   role: string | null
   active: boolean
+  token?: string
+  accessToken?: string
+  jwt?: string
+  securedLoginToken?: string
 }
 
 export interface ConfirmEmailRequest {
@@ -48,4 +55,6 @@ export interface AuthContextType extends AuthState {
   resendCode: (email: string) => Promise<void>
   logout: () => void
   clearError: () => void
+  getToken: () => string | null
+  updateUser: (updates: Partial<User>) => void
 }

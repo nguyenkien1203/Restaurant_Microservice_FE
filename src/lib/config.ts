@@ -9,4 +9,8 @@ export const API_ENDPOINTS = {
     confirm: `${API_BASE_URL}/api/auth/confirm`,
     resendCode: `${API_BASE_URL}/api/auth/resend-code`,
   },
+  profile: {
+    me: `${API_BASE_URL}/api/profiles/me`,
+    update: `${API_BASE_URL}/api/profiles/me`,
+  },
 } as const

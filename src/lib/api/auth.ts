@@ -22,6 +22,7 @@ export async function loginApi(credentials: LoginRequest): Promise<AuthResponse>
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include', // Include cookies for session-based auth
     body: JSON.stringify(credentials),
   })
 

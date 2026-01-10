@@ -22,4 +22,16 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      // Proxy API requests to backend to avoid CORS/cookie issues
+      '/api': {
+        target: process.env.VITE_API_BASE_URL || 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        // Preserve cookies
+        cookieDomainRewrite: 'localhost',
+      },
+    },
+  },
 })

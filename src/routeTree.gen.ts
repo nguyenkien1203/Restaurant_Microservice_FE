@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ReservationRouteImport } from './routes/reservation'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OrderRouteImport } from './routes/order'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as LoginRouteImport } from './routes/login'
@@ -36,6 +37,11 @@ const SignupRoute = SignupRouteImport.update({
 const ReservationRoute = ReservationRouteImport.update({
   id: '/reservation',
   path: '/reservation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrderRoute = OrderRouteImport.update({
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/menu': typeof MenuRoute
   '/order': typeof OrderRoute
+  '/profile': typeof ProfileRoute
   '/reservation': typeof ReservationRoute
   '/signup': typeof SignupRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/menu': typeof MenuRoute
   '/order': typeof OrderRoute
+  '/profile': typeof ProfileRoute
   '/reservation': typeof ReservationRoute
   '/signup': typeof SignupRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/menu': typeof MenuRoute
   '/order': typeof OrderRoute
+  '/profile': typeof ProfileRoute
   '/reservation': typeof ReservationRoute
   '/signup': typeof SignupRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/menu'
     | '/order'
+    | '/profile'
     | '/reservation'
     | '/signup'
     | '/admin/analytics'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/menu'
     | '/order'
+    | '/profile'
     | '/reservation'
     | '/signup'
     | '/admin/analytics'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/menu'
     | '/order'
+    | '/profile'
     | '/reservation'
     | '/signup'
     | '/admin/analytics'
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MenuRoute: typeof MenuRoute
   OrderRoute: typeof OrderRoute
+  ProfileRoute: typeof ProfileRoute
   ReservationRoute: typeof ReservationRoute
   SignupRoute: typeof SignupRoute
   DemoTanstackQueryRoute: typeof DemoTanstackQueryRoute
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/reservation'
       fullPath: '/reservation'
       preLoaderRoute: typeof ReservationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/order': {
@@ -417,6 +437,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MenuRoute: MenuRoute,
   OrderRoute: OrderRoute,
+  ProfileRoute: ProfileRoute,
   ReservationRoute: ReservationRoute,
   SignupRoute: SignupRoute,
   DemoTanstackQueryRoute: DemoTanstackQueryRoute,

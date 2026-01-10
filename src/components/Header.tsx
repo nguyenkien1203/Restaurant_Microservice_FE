@@ -2,13 +2,22 @@
 
 import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Menu, X, User, LogOut } from 'lucide-react'
+import {
+  Menu,
+  X,
+  LogOut,
+  LayoutDashboard,
+  ClipboardList,
+  UserCog,
+  ChevronDown,
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
   const router = useRouterState()
   const navigate = useNavigate()
   const pathname = router.location.pathname
@@ -67,21 +76,73 @@ export default function Header() {
 
           <div className="hidden md:flex items-center gap-3">
             {isAuthenticated && user ? (
-              <>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <User className="h-4 w-4" />
-                  <span className="max-w-[150px] truncate">{user.email}</span>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="text-muted-foreground hover:text-foreground"
-                >
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-              </>
+              <div
+                className="relative"
+                onMouseEnter={() => setDropdownOpen(true)}
+                onMouseLeave={() => setDropdownOpen(false)}
+              >
+                <button className="flex items-center gap-2 text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-lg hover:bg-accent cursor-pointer">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                    <span className="text-sm font-semibold text-primary">
+                      {user.fullName?.charAt(0)?.toUpperCase() ||
+                        user.email.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="max-w-[150px] truncate">
+                    {user.fullName || user.email}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 transition-transform',
+                      dropdownOpen && 'rotate-180',
+                    )}
+                  />
+                </button>
+
+                {/* Dropdown Menu */}
+                {dropdownOpen && (
+                  <div className="absolute right-0 top-full mt-1 w-56 bg-card border border-border rounded-lg shadow-lg py-2 z-50">
+                    <div className="px-4 py-2 border-b border-border mb-1">
+                      <p className="font-medium text-foreground truncate">
+                        {user.fullName || 'Guest'}
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                    <Link
+                      to={'/profile' as '/'}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Link>
+                    <Link
+                      to={'/profile' as '/'}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      Order History
+                    </Link>
+                    <Link
+                      to={'/profile' as '/'}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
+                    >
+                      <UserCog className="h-4 w-4" />
+                      Profile Settings
+                    </Link>
+                    <div className="border-t border-border mt-1 pt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-destructive hover:bg-accent transition-colors cursor-pointer"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
                 <Link to={'/login' as '/'}>
@@ -134,15 +195,43 @@ export default function Header() {
               <div className="flex flex-col gap-2 pt-2 border-t border-border">
                 {isAuthenticated && user ? (
                   <>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-                      <User className="h-4 w-4" />
-                      <span className="truncate">{user.email}</span>
+                    <div className="flex items-center gap-3 py-2">
+                      <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                        <span className="text-sm font-semibold text-primary">
+                          {user.fullName?.charAt(0)?.toUpperCase() ||
+                            user.email.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground truncate">
+                          {user.fullName || 'Guest'}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {user.email}
+                        </p>
+                      </div>
                     </div>
+                    <Link
+                      to={'/profile' as '/'}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground py-2 hover:text-foreground"
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Link>
+                    <Link
+                      to={'/profile' as '/'}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-2 text-sm text-muted-foreground py-2 hover:text-foreground"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      Order History
+                    </Link>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={handleLogout}
-                      className="justify-start text-muted-foreground hover:text-foreground"
+                      className="justify-start text-destructive hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
                       Logout
