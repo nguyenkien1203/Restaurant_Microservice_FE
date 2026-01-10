@@ -24,8 +24,10 @@ export interface RegisterRequest {
 export interface AuthResponse {
   email: string
   fullName: string
-  role: string | null
+  role?: string | null
+  roles?: string | null // API returns "roles" field
   active: boolean
+  authenticated?: boolean
   token?: string
   accessToken?: string
   jwt?: string
@@ -49,7 +51,7 @@ export interface AuthState {
 }
 
 export interface AuthContextType extends AuthState {
-  login: (credentials: LoginRequest) => Promise<void>
+  login: (credentials: LoginRequest) => Promise<User>
   register: (data: RegisterRequest) => Promise<{ email: string }>
   confirmEmail: (data: ConfirmEmailRequest) => Promise<void>
   resendCode: (email: string) => Promise<void>
@@ -57,4 +59,19 @@ export interface AuthContextType extends AuthState {
   clearError: () => void
   getToken: () => string | null
   updateUser: (updates: Partial<User>) => void
+  isAdmin: () => boolean
+  isUser: () => boolean
+}
+
+// Role constants
+export const ROLES = {
+  ADMIN: 'ROLE_ADMIN',
+  USER: 'ROLE_USER',
+} as const
+
+// Response from /api/auth/me endpoint
+export interface AuthMeResponse {
+  roles: string
+  email: string
+  authenticated: boolean
 }

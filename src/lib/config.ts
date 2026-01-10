@@ -8,6 +8,7 @@ export const API_ENDPOINTS = {
     register: `${API_BASE_URL}/api/auth/register`,
     confirm: `${API_BASE_URL}/api/auth/confirm`,
     resendCode: `${API_BASE_URL}/api/auth/resend-code`,
+    me: `${API_BASE_URL}/api/auth/me`, // Get user role
   },
   profile: {
     me: `${API_BASE_URL}/api/profiles/me`,

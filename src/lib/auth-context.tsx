@@ -11,7 +11,9 @@ import {
   registerApi,
   confirmEmailApi,
   resendCodeApi,
+  getAuthMeApi,
 } from './api/auth'
+import { getMyProfile } from './api/profile'
 import type {
   User,
   LoginRequest,
@@ -63,22 +65,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null)
 
     try {
-      const response = await loginApi(credentials)
+      // Step 1: Call login API (sets the cookie)
+      const loginResponse = await loginApi(credentials)
+
       // Extract token from response (handle different possible field names)
       const token =
-        response.token ||
-        response.accessToken ||
-        response.jwt ||
-        response.securedLoginToken
+        loginResponse.token ||
+        loginResponse.accessToken ||
+        loginResponse.jwt ||
+        loginResponse.securedLoginToken
+
+      // Step 2: Fetch user role from /api/auth/me (requires cookie)
+      let userRole: string | null =
+        loginResponse.role || loginResponse.roles || null
+      try {
+        const authMe = await getAuthMeApi()
+        userRole = authMe.roles || userRole
+      } catch {
+        // If auth/me fails, use role from login response
+        console.warn('Could not fetch user role from /api/auth/me')
+      }
+
+      // Step 3: Fetch user profile to get fullName (requires cookie)
+      let fullName = loginResponse.fullName || credentials.email.split('@')[0]
+      try {
+        const profile = await getMyProfile()
+        fullName = profile.fullName || fullName
+      } catch {
+        // If profile fetch fails, use fallback
+        console.warn('Could not fetch user profile')
+      }
+
       const userData: User = {
-        email: response.email,
-        fullName: response.fullName || response.email.split('@')[0],
-        role: response.role,
-        active: response.active,
+        email: loginResponse.email || credentials.email,
+        fullName: fullName,
+        role: userRole,
+        active: loginResponse.active ?? true,
         token: token,
       }
       setUser(userData)
       storeUser(userData)
+      return userData
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Login failed. Please try again.'
@@ -171,6 +198,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  // Role checking helpers
+  const isAdmin = useCallback(() => {
+    return user?.role === 'ROLE_ADMIN'
+  }, [user])
+
+  const isUser = useCallback(() => {
+    return user?.role === 'ROLE_USER'
+  }, [user])
+
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
@@ -184,6 +220,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearError,
     getToken,
     updateUser,
+    isAdmin,
+    isUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

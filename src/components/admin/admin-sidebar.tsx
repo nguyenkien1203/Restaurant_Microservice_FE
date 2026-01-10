@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router"
+import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
 import {
   LayoutDashboard,
   UtensilsCrossed,
@@ -8,52 +8,76 @@ import {
   BarChart3,
   Settings,
   ChefHat,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+  LogOut,
+  Shield,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { useAuth } from '@/lib/auth-context'
 
 const navItems = [
-  { href: "/admin", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/admin/orders", icon: ShoppingBag, label: "Orders" },
-  { href: "/admin/menu", icon: UtensilsCrossed, label: "Menu Management" },
-  { href: "/admin/reservations", icon: Calendar, label: "Reservations" },
-  { href: "/admin/kitchen", icon: ChefHat, label: "Kitchen View" },
-  { href: "/admin/customers", icon: Users, label: "Customers" },
-  { href: "/admin/staff", icon: Users, label: "Staff" },
-  { href: "/admin/analytics", icon: BarChart3, label: "Analytics" },
-  { href: "/admin/settings", icon: Settings, label: "Settings" },
+  { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
+  { href: '/admin/menu', icon: UtensilsCrossed, label: 'Menu Management' },
+  { href: '/admin/reservations', icon: Calendar, label: 'Reservations' },
+  { href: '/admin/kitchen', icon: ChefHat, label: 'Kitchen View' },
+  { href: '/admin/customers', icon: Users, label: 'Customers' },
+  { href: '/admin/staff', icon: Users, label: 'Staff' },
+  { href: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
+  { href: '/admin/settings', icon: Settings, label: 'Settings' },
 ]
 
 export function AdminSidebar() {
   const router = useRouterState()
+  const navigate = useNavigate()
   const pathname = router.location.pathname
+  const { user, logout } = useAuth()
+
+  const displayName = user?.fullName || user?.email?.split('@')[0] || 'Admin'
+  const displayInitial = displayName.charAt(0).toUpperCase()
+
+  const handleLogout = () => {
+    logout()
+    navigate({ to: '/login' })
+  }
 
   return (
-    <aside className="w-64 bg-sidebar text-sidebar-foreground min-h-screen flex flex-col">
+    <aside className="w-64 bg-sidebar text-sidebar-foreground h-screen flex flex-col sticky top-0 shrink-0">
+      {/* Admin Profile Section */}
       <div className="p-4 border-b border-sidebar-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-sidebar-primary rounded-full flex items-center justify-center">
-            <span className="text-sidebar-primary-foreground font-bold text-sm">A</span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center">
+            <span className="text-amber-500 font-bold text-lg">
+              {displayInitial}
+            </span>
           </div>
           <div>
-            <span className="font-semibold text-sm">Aperture Admin</span>
-            <p className="text-xs text-sidebar-foreground/60">Restaurant Manager</p>
+            <h3 className="font-semibold text-sm text-sidebar-foreground">
+              {displayName}
+            </h3>
+            <span className="inline-flex items-center gap-1 text-xs text-amber-500">
+              <Shield className="h-3 w-3" />
+              Aperture Admin
+            </span>
           </div>
         </div>
       </div>
 
+      {/* Navigation */}
       <nav className="flex-1 p-4">
         <ul className="space-y-1">
           {navItems.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/admin' && pathname.startsWith(item.href))
             return (
               <li key={item.href}>
                 <Link
                   to={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                     isActive
-                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                      : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                      : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -65,16 +89,15 @@ export function AdminSidebar() {
         </ul>
       </nav>
 
+      {/* Logout Button */}
       <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-sidebar-accent rounded-full flex items-center justify-center">
-            <span className="text-sidebar-accent-foreground font-semibold text-sm">A</span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">Alex Johnson</p>
-            <p className="text-xs text-sidebar-foreground/60">Admin</p>
-          </div>
-        </div>
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors cursor-pointer"
+        >
+          <LogOut className="h-4 w-4" />
+          Logout
+        </button>
       </div>
     </aside>
   )

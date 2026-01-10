@@ -1,11 +1,12 @@
 import type React from 'react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth-context'
+import { ROLES } from '@/lib/types/auth'
 
 export const Route = createFileRoute('/login')({
   component: LoginPage,
@@ -13,20 +14,38 @@ export const Route = createFileRoute('/login')({
 
 function LoginPage() {
   const navigate = useNavigate()
-  const { login, isLoading, error, clearError } = useAuth()
+  const { login, isLoading, error, clearError, isAuthenticated, isAdmin } =
+    useAuth()
 
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (isAuthenticated) {
+      if (isAdmin()) {
+        navigate({ to: '/admin' })
+      } else {
+        navigate({ to: '/' })
+      }
+    }
+  }, [isAuthenticated, isAdmin, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     clearError()
 
     try {
-      await login({ email, password })
-      // Navigate to home page on successful login
-      navigate({ to: '/' })
+      const user = await login({ email, password })
+      // Redirect based on user role
+      if (user.role === ROLES.ADMIN) {
+        // Admin users go directly to admin dashboard
+        navigate({ to: '/admin' })
+      } else {
+        // Regular users go to home page
+        navigate({ to: '/' })
+      }
     } catch (err) {
       // Check if the error is about email confirmation
       const errorMessage = err instanceof Error ? err.message.toLowerCase() : ''

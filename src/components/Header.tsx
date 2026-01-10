@@ -10,6 +10,7 @@ import {
   ClipboardList,
   UserCog,
   ChevronDown,
+  Shield,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -21,7 +22,7 @@ export default function Header() {
   const router = useRouterState()
   const navigate = useNavigate()
   const pathname = router.location.pathname
-  const { user, isAuthenticated, logout } = useAuth()
+  const { user, isAuthenticated, logout, isAdmin } = useAuth()
 
   const navLinks = [
     { to: '/', label: 'Home' },
@@ -91,6 +92,11 @@ export default function Header() {
                   <span className="max-w-[150px] truncate">
                     {user.fullName || user.email}
                   </span>
+                  {isAdmin() && (
+                    <span className="text-xs bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded font-medium">
+                      Admin
+                    </span>
+                  )}
                   <ChevronDown
                     className={cn(
                       'h-4 w-4 transition-transform',
@@ -134,6 +140,23 @@ export default function Header() {
                       <UserCog className="h-4 w-4" />
                       Profile Settings
                     </Link>
+                    {isAdmin() && (
+                      <>
+                        <div className="border-t border-border mt-1 pt-1" />
+                        <Link
+                          to="/admin"
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
+                        >
+                          <Shield className="h-4 w-4 text-amber-500" />
+                          <span className="flex items-center gap-2">
+                            Admin Panel
+                            <span className="text-xs bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded">
+                              Admin
+                            </span>
+                          </span>
+                        </Link>
+                      </>
+                    )}
                     <div className="border-t border-border mt-1 pt-1">
                       <button
                         onClick={handleLogout}
@@ -206,9 +229,16 @@ export default function Header() {
                         </span>
                       </div>
                       <div>
-                        <p className="font-medium text-foreground truncate">
-                          {user.fullName || 'Guest'}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-foreground truncate">
+                            {user.fullName || 'Guest'}
+                          </p>
+                          {isAdmin() && (
+                            <span className="text-xs bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded font-medium">
+                              Admin
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground truncate">
                           {user.email}
                         </p>
@@ -232,6 +262,21 @@ export default function Header() {
                       <ClipboardList className="h-4 w-4" />
                       Order History
                     </Link>
+                    {isAdmin() && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="flex items-center gap-2 text-sm text-muted-foreground py-2 hover:text-foreground"
+                      >
+                        <Shield className="h-4 w-4 text-amber-500" />
+                        <span className="flex items-center gap-2">
+                          Admin Panel
+                          <span className="text-xs bg-amber-500/10 text-amber-600 px-1.5 py-0.5 rounded">
+                            Admin
+                          </span>
+                        </span>
+                      </Link>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"

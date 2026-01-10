@@ -20,6 +20,7 @@ import {
   Pencil,
   Check,
   X,
+  Shield,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -93,7 +94,7 @@ const mockOrders = [
 function ProfilePage() {
   const navigate = useNavigate()
   const { tab: urlTab } = useSearch({ from: '/profile' })
-  const { user, logout, isAuthenticated, updateUser } = useAuth()
+  const { user, logout, isAuthenticated, updateUser, isAdmin } = useAuth()
   const [activeTab, setActiveTab] = useState<TabType>(urlTab || 'dashboard')
 
   // Sync URL tab with state
@@ -201,7 +202,14 @@ function ProfilePage() {
             </div>
             <div>
               <h3 className="font-semibold text-foreground">{displayName}</h3>
-              <p className="text-sm text-primary">Loyalty Member</p>
+              {isAdmin() ? (
+                <span className="inline-flex items-center gap-1 text-sm text-amber-600">
+                  <Shield className="h-3.5 w-3.5" />
+                  Administrator
+                </span>
+              ) : (
+                <p className="text-sm text-primary">Dining Member</p>
+              )}
             </div>
           </div>
         </div>
@@ -228,6 +236,18 @@ function ProfilePage() {
                 </li>
               )
             })}
+            {/* Admin Panel Link */}
+            {isAdmin() && (
+              <li className="pt-2 mt-2 border-t border-border">
+                <Link
+                  to="/admin"
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors text-amber-600 hover:bg-amber-500/10"
+                >
+                  <Shield className="h-5 w-5" />
+                  Admin Panel
+                </Link>
+              </li>
+            )}
           </ul>
         </nav>
 
@@ -540,7 +560,7 @@ function ProfileSettingsContent({
   onProfileUpdate: () => void
 }) {
   const queryClient = useQueryClient()
-  const { updateUser } = useAuth()
+  const { updateUser, user, isAdmin } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [formData, setFormData] = useState({
@@ -711,6 +731,34 @@ function ProfileSettingsContent({
                   Email cannot be changed
                 </p>
               )}
+            </div>
+
+            {/* Role (read-only) */}
+            <div className="py-3 border-b border-border">
+              <Label className="font-medium text-foreground">
+                Account Role
+              </Label>
+              <div className="flex items-center gap-2 mt-1">
+                {isAdmin() ? (
+                  <span className="inline-flex items-center gap-1.5 text-sm">
+                    <Shield className="h-4 w-4 text-amber-500" />
+                    <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20">
+                      Administrator
+                    </Badge>
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-sm">
+                    <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20">
+                      Member
+                    </Badge>
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {user?.role === 'ROLE_ADMIN'
+                  ? 'You have full admin access to manage the restaurant'
+                  : 'Standard member account with access to reservations and orders'}
+              </p>
             </div>
 
             {/* Phone Number */}

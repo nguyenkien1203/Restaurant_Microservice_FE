@@ -4,6 +4,7 @@ import type {
   RegisterRequest,
   ConfirmEmailRequest,
   AuthResponse,
+  AuthMeResponse,
 } from '../types/auth'
 
 class AuthApiError extends Error {
@@ -91,4 +92,25 @@ export async function resendCodeApi(email: string): Promise<void> {
       response.status
     )
   }
+}
+
+// Get current authenticated user info (role, email)
+export async function getAuthMeApi(): Promise<AuthMeResponse> {
+  const response = await fetch(API_ENDPOINTS.auth.me, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include', // Include cookies for session-based auth
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new AuthApiError(
+      errorData.message || 'Failed to get user info.',
+      response.status
+    )
+  }
+
+  return response.json()
 }
