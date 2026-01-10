@@ -111,21 +111,24 @@ export default function Header() {
                       </p>
                     </div>
                     <Link
-                      to={'/profile' as '/'}
+                      to="/profile"
+                      search={{ tab: 'dashboard' }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       Dashboard
                     </Link>
                     <Link
-                      to={'/profile' as '/'}
+                      to="/profile"
+                      search={{ tab: 'orders' }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
                     >
                       <ClipboardList className="h-4 w-4" />
                       Order History
                     </Link>
                     <Link
-                      to={'/profile' as '/'}
+                      to="/profile"
+                      search={{ tab: 'settings' }}
                       className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
                     >
                       <UserCog className="h-4 w-4" />
@@ -212,7 +215,8 @@ export default function Header() {
                       </div>
                     </div>
                     <Link
-                      to={'/profile' as '/'}
+                      to="/profile"
+                      search={{ tab: 'dashboard' }}
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-2 text-sm text-muted-foreground py-2 hover:text-foreground"
                     >
@@ -220,7 +224,8 @@ export default function Header() {
                       Dashboard
                     </Link>
                     <Link
-                      to={'/profile' as '/'}
+                      to="/profile"
+                      search={{ tab: 'orders' }}
                       onClick={() => setMobileMenuOpen(false)}
                       className="flex items-center gap-2 text-sm text-muted-foreground py-2 hover:text-foreground"
                     >

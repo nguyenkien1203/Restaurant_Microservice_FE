@@ -1,4 +1,9 @@
-import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  Link,
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -22,10 +27,6 @@ import { useAuth } from '@/lib/auth-context'
 import { getMyProfile } from '@/lib/api/profile'
 import type { UserProfile } from '@/lib/types/profile'
 
-export const Route = createFileRoute('/profile')({
-  component: ProfilePage,
-})
-
 type TabType =
   | 'dashboard'
   | 'reservations'
@@ -33,6 +34,24 @@ type TabType =
   | 'settings'
   | 'addresses'
   | 'payment'
+
+export const Route = createFileRoute('/profile')({
+  component: ProfilePage,
+  validateSearch: (search: Record<string, unknown>): { tab?: TabType } => {
+    const validTabs: TabType[] = [
+      'dashboard',
+      'reservations',
+      'orders',
+      'settings',
+      'addresses',
+      'payment',
+    ]
+    const tab = search.tab as TabType | undefined
+    return {
+      tab: tab && validTabs.includes(tab) ? tab : undefined,
+    }
+  },
+})
 
 interface SidebarItem {
   id: TabType
@@ -69,8 +88,22 @@ const mockOrders = [
 
 function ProfilePage() {
   const navigate = useNavigate()
+  const { tab: urlTab } = useSearch({ from: '/profile' })
   const { user, logout, isAuthenticated, updateUser } = useAuth()
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard')
+  const [activeTab, setActiveTab] = useState<TabType>(urlTab || 'dashboard')
+
+  // Sync URL tab with state
+  useEffect(() => {
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab)
+    }
+  }, [urlTab])
+
+  // Update URL when tab changes
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab)
+    navigate({ to: '/profile', search: { tab } })
+  }
 
   // Fetch profile data from API
   const {
@@ -177,7 +210,7 @@ function ProfilePage() {
               return (
                 <li key={item.id}>
                   <button
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => handleTabChange(item.id)}
                     className={cn(
                       'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
                       activeTab === item.id
