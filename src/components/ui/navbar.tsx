@@ -1,10 +1,10 @@
-"use client"
+'use client'
 
-import { Link, useRouterState } from "@tanstack/react-router"
-import { useState } from "react"
-import { Menu, X } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { Link, useRouterState } from '@tanstack/react-router'
+import { useState } from 'react'
+import { Menu, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -12,16 +12,15 @@ export function Navbar() {
   const pathname = router.location.pathname
 
   const navLinks = [
-    { to: "/", label: "Home" },
-    { to: "/menu", label: "Menu" },
-    { to: "/reservation", label: "Reservations" },
-    { to: "/order", label: "Order Online" },
-    { to: "/about", label: "About" },
+    { to: '/', label: 'Home' },
+    { to: '/menu', label: 'Menu' },
+    { to: '/reservation', label: 'Reservations' },
+    { to: '/about', label: 'About' },
   ]
 
   const isActive = (path: string) => {
-    if (path === "/") return pathname === "/" || pathname === "/home"
-    return pathname === path || pathname.startsWith(path + "/")
+    if (path === '/') return pathname === '/' || pathname === '/home'
+    return pathname === path || pathname.startsWith(path + '/')
   }
 
   return (
@@ -30,21 +29,25 @@ export function Navbar() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
-              <span className="text-secondary-foreground font-bold text-sm">A</span>
+              <span className="text-secondary-foreground font-bold text-sm">
+                A
+              </span>
             </div>
-            <span className="font-semibold text-foreground">Aperture Dining</span>
+            <span className="font-semibold text-foreground">
+              Aperture Dining
+            </span>
           </div>
 
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
-                to={link.to as "/"}
+                to={link.to as '/'}
                 className={cn(
-                  "text-sm transition-colors",
+                  'text-sm transition-colors',
                   isActive(link.to)
-                    ? "text-primary font-medium"
-                    : "text-muted-foreground hover:text-primary"
+                    ? 'text-primary font-medium'
+                    : 'text-muted-foreground hover:text-primary',
                 )}
               >
                 {link.label}
@@ -53,25 +56,35 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex items-center gap-3">
-            <Link to={"/login" as "/"}>
+            <Link to={'/login' as '/'}>
               <Button variant="ghost" size="sm">
                 Login
               </Button>
             </Link>
-            <Link to={"/signup" as "/"}>
+            <Link to={'/signup' as '/'}>
               <Button variant="outline" size="sm">
                 Sign Up
               </Button>
             </Link>
-            <Link to={"/reservation" as "/"}>
-              <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <Link to={'/reservation' as '/'}>
+              <Button
+                size="sm"
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 Book a Table
               </Button>
             </Link>
           </div>
 
-          <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-            {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          <button
+            className="md:hidden"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
           </button>
         </div>
 
@@ -81,12 +94,12 @@ export function Navbar() {
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
-                  to={link.to as "/"}
+                  to={link.to as '/'}
                   className={cn(
-                    "text-sm transition-colors",
+                    'text-sm transition-colors',
                     isActive(link.to)
-                      ? "text-primary font-medium"
-                      : "text-muted-foreground"
+                      ? 'text-primary font-medium'
+                      : 'text-muted-foreground',
                   )}
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -94,18 +107,21 @@ export function Navbar() {
                 </Link>
               ))}
               <div className="flex gap-2 pt-2">
-                <Link to={"/login" as "/"}>
+                <Link to={'/login' as '/'}>
                   <Button variant="ghost" size="sm">
                     Login
                   </Button>
                 </Link>
-                <Link to={"/signup" as "/"}>
+                <Link to={'/signup' as '/'}>
                   <Button variant="outline" size="sm">
                     Sign Up
                   </Button>
                 </Link>
-                <Link to={"/reservation" as "/"}>
-                  <Button size="sm" className="bg-primary text-primary-foreground">
+                <Link to={'/reservation' as '/'}>
+                  <Button
+                    size="sm"
+                    className="bg-primary text-primary-foreground"
+                  >
                     Book a Table
                   </Button>
                 </Link>
