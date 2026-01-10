@@ -151,110 +151,106 @@ function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-muted">
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 min-h-[calc(100vh-4rem)] bg-card border-r border-border flex flex-col">
-          {/* User Profile Section */}
-          <div className="p-6 border-b border-border">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
-                <span className="text-xl font-semibold text-primary">
-                  {displayName.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">{displayName}</h3>
-                <p className="text-sm text-primary">Loyalty Member</p>
-              </div>
+    <div className="flex min-h-[calc(100vh-4rem)] bg-muted">
+      {/* Sidebar - Fixed position, full height */}
+      <aside className="w-64 bg-card border-r border-border flex flex-col sticky top-16 h-[calc(100vh-4rem)] shrink-0">
+        {/* User Profile Section */}
+        <div className="p-6 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-lg bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+              <span className="text-xl font-semibold text-primary">
+                {displayName.charAt(0).toUpperCase()}
+              </span>
+            </div>
+            <div>
+              <h3 className="font-semibold text-foreground">{displayName}</h3>
+              <p className="text-sm text-primary">Loyalty Member</p>
             </div>
           </div>
+        </div>
 
-          {/* Navigation */}
-          <nav className="flex-1 p-4">
-            <ul className="space-y-1">
-              {sidebarItems.map((item) => {
-                const Icon = item.icon
-                return (
-                  <li key={item.id}>
-                    <button
-                      onClick={() => setActiveTab(item.id)}
-                      className={cn(
-                        'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
-                        activeTab === item.id
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer',
-                      )}
-                    >
-                      <Icon className="h-5 w-5" />
-                      {item.label}
-                    </button>
-                  </li>
-                )
-              })}
-            </ul>
-          </nav>
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-1">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon
+              return (
+                <li key={item.id}>
+                  <button
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors',
+                      activeTab === item.id
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:bg-accent hover:text-foreground cursor-pointer',
+                    )}
+                  >
+                    <Icon className="h-5 w-5" />
+                    {item.label}
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </nav>
 
-          {/* Logout Button */}
-          <div className="p-4 border-t border-border">
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+        {/* Logout Button */}
+        <div className="p-4 border-t border-border">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-foreground transition-colors cursor-pointer"
+          >
+            <LogOut className="h-5 w-5" />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content - Scrollable */}
+      <main className="flex-1 p-8 overflow-y-auto min-h-[calc(100vh-4rem)]">
+        {/* Error Banner */}
+        {profileError && (
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-destructive" />
+            <div className="flex-1">
+              <p className="text-sm text-destructive">
+                Failed to load profile data. Some information may be outdated.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => refetchProfile()}
+              className="border-destructive/20 text-destructive hover:bg-destructive/10"
             >
-              <LogOut className="h-5 w-5" />
-              Logout
-            </button>
+              Retry
+            </Button>
           </div>
-        </aside>
+        )}
 
-        {/* Main Content */}
-        <main className="flex-1 p-8">
-          {/* Error Banner */}
-          {profileError && (
-            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-              <div className="flex-1">
-                <p className="text-sm text-destructive">
-                  Failed to load profile data. Some information may be outdated.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => refetchProfile()}
-                className="border-destructive/20 text-destructive hover:bg-destructive/10"
-              >
-                Retry
-              </Button>
-            </div>
-          )}
-
-          {activeTab === 'dashboard' && (
-            <DashboardContent
-              firstName={firstName}
-              loyaltyPoints={loyaltyPoints}
-              nextRewardPoints={nextRewardPoints}
-              progressPercentage={progressPercentage}
-              orders={mockOrders}
-            />
-          )}
-          {activeTab === 'reservations' && <ReservationsContent />}
-          {activeTab === 'orders' && (
-            <OrderHistoryContent orders={mockOrders} />
-          )}
-          {activeTab === 'settings' && (
-            <ProfileSettingsContent
-              profile={profile}
-              email={displayEmail}
-              fullName={displayName}
-            />
-          )}
-          {activeTab === 'addresses' && (
-            <AddressesContent address={profile?.address} />
-          )}
-          {activeTab === 'payment' && <PaymentMethodsContent />}
-        </main>
-      </div>
+        {activeTab === 'dashboard' && (
+          <DashboardContent
+            firstName={firstName}
+            loyaltyPoints={loyaltyPoints}
+            nextRewardPoints={nextRewardPoints}
+            progressPercentage={progressPercentage}
+            orders={mockOrders}
+          />
+        )}
+        {activeTab === 'reservations' && <ReservationsContent />}
+        {activeTab === 'orders' && <OrderHistoryContent orders={mockOrders} />}
+        {activeTab === 'settings' && (
+          <ProfileSettingsContent
+            profile={profile}
+            email={displayEmail}
+            fullName={displayName}
+          />
+        )}
+        {activeTab === 'addresses' && (
+          <AddressesContent address={profile?.address} />
+        )}
+        {activeTab === 'payment' && <PaymentMethodsContent />}
+      </main>
     </div>
   )
 }
