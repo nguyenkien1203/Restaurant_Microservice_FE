@@ -21,5 +21,10 @@ export { OrderList } from './order-list'
 export { QuickActionButton } from './quick-action-button'
 
 // Menu-specific components
-export { MenuItemRow, MenuFilters } from './menu'
+export {
+  MenuItemRow,
+  MenuFilters,
+  MenuItemFormDialog,
+  DeleteConfirmDialog,
+} from './menu'
 export type { StatusFilter, DietaryFilter } from './menu'

@@ -1,5 +1,10 @@
 import { API_BASE_URL } from '../config'
-import type { MenuItem, NormalizedMenuItem } from '../types/menu'
+import type {
+  MenuItem,
+  NormalizedMenuItem,
+  CreateMenuItemRequest,
+  UpdateMenuItemRequest,
+} from '../types/menu'
 
 // Normalize API response to frontend format
 export function normalizeMenuItem(item: MenuItem): NormalizedMenuItem {
@@ -62,7 +67,7 @@ export async function fetchCategories(): Promise<string[]> {
 // Fetch all menu items for admin (includes unavailable items)
 export async function fetchAdminMenuItems(): Promise<NormalizedMenuItem[]> {
   const response = await fetch(`${API_BASE_URL}/api/menu`, {
-    credentials: 'include', // Include auth cookies
+    credentials: 'include',
   })
 
   if (!response.ok) {
@@ -73,6 +78,76 @@ export async function fetchAdminMenuItems(): Promise<NormalizedMenuItem[]> {
   }
 
   const data: MenuItem[] = await response.json()
-  // Return all items for admin (don't filter by availability)
   return data.map(normalizeMenuItem)
+}
+
+// Create a new menu item
+export async function createMenuItem(
+  data: CreateMenuItemRequest,
+): Promise<NormalizedMenuItem> {
+  const response = await fetch(`${API_BASE_URL}/api/menu`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      ...data,
+      isAvailable: data.isAvailable ?? true,
+    }),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized: Please log in as admin')
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || 'Failed to create menu item')
+  }
+
+  const item: MenuItem = await response.json()
+  return normalizeMenuItem(item)
+}
+
+// Update an existing menu item
+export async function updateMenuItem(
+  id: string,
+  data: UpdateMenuItemRequest,
+): Promise<NormalizedMenuItem> {
+  const response = await fetch(`${API_BASE_URL}/api/menu/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(data),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized: Please log in as admin')
+    }
+    if (response.status === 404) {
+      throw new Error('Menu item not found')
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || 'Failed to update menu item')
+  }
+
+  const item: MenuItem = await response.json()
+  return normalizeMenuItem(item)
+}
+
+// Delete a menu item
+export async function deleteMenuItem(id: string): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/menu/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      throw new Error('Unauthorized: Please log in as admin')
+    }
+    if (response.status === 404) {
+      throw new Error('Menu item not found')
+    }
+    throw new Error('Failed to delete menu item')
+  }
 }

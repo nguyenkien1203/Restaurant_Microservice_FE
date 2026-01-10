@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -10,13 +10,20 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Plus, Flame, Leaf } from 'lucide-react'
-import { fetchAdminMenuItems } from '@/lib/api/menu'
+import {
+  fetchAdminMenuItems,
+  createMenuItem,
+  updateMenuItem,
+  deleteMenuItem,
+} from '@/lib/api/menu'
 import { useState, useMemo, useCallback } from 'react'
-import type { NormalizedMenuItem } from '@/lib/types/menu'
+import type { NormalizedMenuItem, MenuItemFormData } from '@/lib/types/menu'
 import {
   AdminPageHeader,
   MenuFilters,
   MenuItemRow,
+  MenuItemFormDialog,
+  DeleteConfirmDialog,
   ActiveFilterTags,
   SortableTableHead,
   TableLoadingState,
@@ -31,7 +38,6 @@ export const Route = createFileRoute('/admin/menu')({
   component: AdminMenu,
 })
 
-// Category order for sorting
 const CATEGORY_ORDER: Record<string, number> = {
   appetizers: 1,
   starters: 1,
@@ -115,10 +121,38 @@ function useMenuSorting() {
   return { sortField, sortDirection, handleSort }
 }
 
+// Convert form data to API request format
+function formDataToRequest(data: MenuItemFormData) {
+  return {
+    name: data.name.trim(),
+    description: data.description.trim(),
+    price: parseFloat(data.price),
+    category: data.category,
+    imageUrl: data.imageUrl.trim() || undefined,
+    isAvailable: data.isAvailable,
+    preparationTime: data.preparationTime
+      ? parseInt(data.preparationTime)
+      : undefined,
+    calories: data.calories ? parseInt(data.calories) : undefined,
+    isSpicy: data.isSpicy,
+    isVegan: data.isVegan,
+  }
+}
+
 function AdminMenu() {
+  const queryClient = useQueryClient()
   const filters = useMenuFilters()
   const sorting = useMenuSorting()
+
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null)
+  const [formDialogOpen, setFormDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [editingItem, setEditingItem] = useState<NormalizedMenuItem | null>(
+    null,
+  )
+  const [deletingItem, setDeletingItem] = useState<NormalizedMenuItem | null>(
+    null,
+  )
 
   const {
     data: menuItems = [],
@@ -129,7 +163,38 @@ function AdminMenu() {
     queryFn: fetchAdminMenuItems,
   })
 
-  // Get unique categories sorted by meal order
+  const createMutation = useMutation({
+    mutationFn: createMenuItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminMenuItems'] })
+      setFormDialogOpen(false)
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string
+      data: ReturnType<typeof formDataToRequest>
+    }) => updateMenuItem(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminMenuItems'] })
+      setFormDialogOpen(false)
+      setEditingItem(null)
+    },
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteMenuItem,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminMenuItems'] })
+      setDeleteDialogOpen(false)
+      setDeletingItem(null)
+    },
+  })
+
   const categories = useMemo(() => {
     return Array.from(new Set(menuItems.map((item) => item.category))).sort(
       (a, b) => {
@@ -141,7 +206,6 @@ function AdminMenu() {
     )
   }, [menuItems])
 
-  // Filter and sort items
   const filteredItems = useMemo(() => {
     return menuItems
       .filter((item) => {
@@ -168,20 +232,15 @@ function AdminMenu() {
       .sort((a, b) => {
         if (!sorting.sortField) return 0
         const modifier = sorting.sortDirection === 'asc' ? 1 : -1
-        if (sorting.sortField === 'name') {
+        if (sorting.sortField === 'name')
           return a.name.localeCompare(b.name) * modifier
-        }
-        if (sorting.sortField === 'category') {
+        if (sorting.sortField === 'category')
           return a.category.localeCompare(b.category) * modifier
-        }
-        if (sorting.sortField === 'price') {
-          return (a.price - b.price) * modifier
-        }
+        if (sorting.sortField === 'price') return (a.price - b.price) * modifier
         return 0
       })
   }, [menuItems, filters, sorting.sortField, sorting.sortDirection])
 
-  // Build filter tags for display
   const filterTags = useMemo(() => {
     const tags = []
     if (filters.searchQuery) {
@@ -222,25 +281,54 @@ function AdminMenu() {
     return tags
   }, [filters])
 
-  // Stats
   const totalItems = menuItems.length
   const availableItems = menuItems.filter((item) => item.isAvailable).length
   const unavailableItems = totalItems - availableItems
 
   const handleAddItem = () => {
-    // TODO: Implement add item functionality
-    console.log('Add item clicked')
+    setEditingItem(null)
+    setFormDialogOpen(true)
   }
 
   const handleEditItem = (item: NormalizedMenuItem) => {
-    // TODO: Implement edit item functionality
-    console.log('Edit item:', item)
+    setEditingItem(item)
+    setFormDialogOpen(true)
   }
 
   const handleDeleteItem = (item: NormalizedMenuItem) => {
-    // TODO: Implement delete item functionality
-    console.log('Delete item:', item)
+    setDeletingItem(item)
+    setDeleteDialogOpen(true)
   }
+
+  const handleFormSubmit = async (data: MenuItemFormData) => {
+    const requestData = formDataToRequest(data)
+    if (editingItem) {
+      await updateMutation.mutateAsync({
+        id: editingItem.id,
+        data: requestData,
+      })
+    } else {
+      await createMutation.mutateAsync(requestData)
+    }
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (deletingItem) {
+      await deleteMutation.mutateAsync(deletingItem.id)
+    }
+  }
+
+  const handleFormClose = () => {
+    setFormDialogOpen(false)
+    setEditingItem(null)
+  }
+
+  const handleDeleteClose = () => {
+    setDeleteDialogOpen(false)
+    setDeletingItem(null)
+  }
+
+  const isMutating = createMutation.isPending || updateMutation.isPending
 
   return (
     <div className="space-y-6">
@@ -268,7 +356,7 @@ function AdminMenu() {
               </div>
             </div>
             <Button onClick={handleAddItem}>
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4" />
               Add Item
             </Button>
           </div>
@@ -357,6 +445,22 @@ function AdminMenu() {
           )}
         </CardContent>
       </Card>
+
+      <MenuItemFormDialog
+        open={formDialogOpen}
+        onClose={handleFormClose}
+        onSubmit={handleFormSubmit}
+        item={editingItem}
+        isLoading={isMutating}
+      />
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteClose}
+        onConfirm={handleDeleteConfirm}
+        item={deletingItem}
+        isLoading={deleteMutation.isPending}
+      />
     </div>
   )
 }

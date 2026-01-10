@@ -1,3 +1,5 @@
 export { MenuItemRow } from './menu-item-row'
 export { MenuFilters } from './menu-filters'
+export { MenuItemFormDialog } from './menu-item-form-dialog'
+export { DeleteConfirmDialog } from './delete-confirm-dialog'
 export type { StatusFilter, DietaryFilter } from './menu-filters'
