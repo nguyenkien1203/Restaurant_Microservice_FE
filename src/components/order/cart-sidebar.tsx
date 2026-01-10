@@ -13,7 +13,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import type { MenuItem } from '../../../lib/menu-data'
+import type { NormalizedMenuItem } from '@/lib/types/menu'
 
 export type OrderType = 'DINE_IN' | 'PRE_ORDER' | 'TAKEAWAY' | 'DELIVERY'
 
@@ -40,7 +40,7 @@ const orderTypeOptions: {
   { value: 'DELIVERY', label: 'Delivery', icon: <Package2 className="h-4 w-4" /> },
 ]
 
-interface CartItem extends MenuItem {
+interface CartItem extends NormalizedMenuItem {
   quantity: number
 }
 

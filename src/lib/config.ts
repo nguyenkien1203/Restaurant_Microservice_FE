@@ -1,6 +1,7 @@
 // API Configuration
 // Update VITE_API_BASE_URL in your .env file or change the fallback value here
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 export const API_ENDPOINTS = {
   auth: {
@@ -13,5 +14,10 @@ export const API_ENDPOINTS = {
   profile: {
     me: `${API_BASE_URL}/api/profiles/me`,
     update: `${API_BASE_URL}/api/profiles/me`,
+  },
+  menu: {
+    all: `${API_BASE_URL}/api/menu/all`,
+    byCategory: (category: string) =>
+      `${API_BASE_URL}/api/menu/all?category=${category}`,
   },
 } as const
