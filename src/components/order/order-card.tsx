@@ -210,6 +210,19 @@ export function OrderCard({
               </div>
             </div>
 
+            {/* Estimated Pickup Time */}
+            {order.estimatedPickupTime && (
+              <div className="flex items-start gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+                <div>
+                  <p className="text-muted-foreground text-xs">Estimated Pickup Time</p>
+                  <p className="text-foreground font-medium">
+                    {formatDate(order.estimatedPickupTime, true)}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Delivery Address */}
             {order.deliveryAddress && (
               <div className="flex items-start gap-2">

@@ -39,8 +39,8 @@ interface OrderFiltersProps {
   onToggleOrderType: (type: OrderType) => void
   onClearOrderTypes: () => void
   // Customer Type
-  customerTypeFilter: CustomerTypeFilter
-  onCustomerTypeChange: (type: CustomerTypeFilter) => void
+  // customerTypeFilter: CustomerTypeFilter
+  // onCustomerTypeChange: (type: CustomerTypeFilter) => void
 }
 
 const orderStatusConfig: Record<OrderStatus, { label: string; color: string }> =
@@ -85,8 +85,8 @@ export function OrderFilters({
   selectedOrderTypes,
   onToggleOrderType,
   onClearOrderTypes,
-  customerTypeFilter,
-  onCustomerTypeChange,
+  // customerTypeFilter,
+  // onCustomerTypeChange,
 }: OrderFiltersProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-3">
@@ -212,7 +212,7 @@ export function OrderFilters({
         </FilterDropdown>
 
         {/* Customer Type Filter */}
-        <FilterDropdown
+        {/* <FilterDropdown
           label="Customer"
           icon={<User className="h-4 w-4" />}
           hasActiveFilters={customerTypeFilter !== 'all'}
@@ -242,7 +242,7 @@ export function OrderFilters({
               )
             })}
           </div>
-        </FilterDropdown>
+        </FilterDropdown> */}
       </div>
     </div>
   )

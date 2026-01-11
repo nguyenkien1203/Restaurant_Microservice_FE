@@ -374,8 +374,8 @@ function AdminOrders() {
                 selectedOrderTypes={filters.selectedOrderTypes}
                 onToggleOrderType={filters.toggleOrderType}
                 onClearOrderTypes={() => filters.setSelectedOrderTypes([])}
-                customerTypeFilter={filters.customerTypeFilter}
-                onCustomerTypeChange={filters.setCustomerTypeFilter}
+                // customerTypeFilter={filters.customerTypeFilter}
+                // onCustomerTypeChange={filters.setCustomerTypeFilter}
               />
 
               <ActiveFilterTags
@@ -407,7 +407,15 @@ function AdminOrders() {
                         currentSortDirection={sorting.sortDirection}
                         onSort={sorting.handleSort}
                       />
-                      <TableHead>Customer</TableHead>
+                      <SortableTableHead
+                        label="Created Date"
+                        field="date"
+                        currentSortField={sorting.sortField}
+                        currentSortDirection={sorting.sortDirection}
+                        onSort={sorting.handleSort}
+                      />
+                      <TableHead>Type</TableHead>
+                      {/* <TableHead>Customer</TableHead> */}
                       <TableHead>Items</TableHead>
                       <SortableTableHead
                         label="Total"

@@ -1,9 +1,11 @@
 import { Link } from '@tanstack/react-router'
-import { CalendarDays, CalendarX2, UtensilsCrossed } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { CalendarDays, CalendarX2, UtensilsCrossed, Clock, Users, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { OrderList } from '@/components/order/order-list'
 import type { Order } from '@/lib/types/order'
+import { getMyReservations, formatTime24to12 } from '@/lib/api/reservation'
 
 interface DashboardTabProps {
   firstName: string
@@ -11,6 +13,15 @@ interface DashboardTabProps {
   isOrdersLoading: boolean
   loyaltyPoints?: number
   nextRewardPoints?: number
+}
+
+function formatDate(dateString: string): string {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  })
 }
 
 export function DashboardTab({
@@ -21,6 +32,27 @@ export function DashboardTab({
   nextRewardPoints = 2000,
 }: DashboardTabProps) {
   const progressPercentage = (loyaltyPoints / nextRewardPoints) * 100
+
+  // Fetch reservations
+  const {
+    data: reservations = [],
+    isLoading: isReservationsLoading,
+  } = useQuery({
+    queryKey: ['reservations', 'my'],
+    queryFn: getMyReservations,
+    staleTime: 2 * 60 * 1000,
+  })
+
+  // Get upcoming reservations (today or later, not cancelled/completed)
+  const today = new Date().toISOString().split('T')[0]
+  const upcomingReservations = reservations
+    .filter(r =>
+      r.reservationDate >= today &&
+      r.status !== 'CANCELLED' &&
+      r.status !== 'COMPLETED' &&
+      r.status !== 'NO_SHOW'
+    )
+    .slice(0, 2) // Show max 2 on dashboard
 
   return (
     <div className="space-y-8">
@@ -75,34 +107,80 @@ export function DashboardTab({
 
         {/* Upcoming Reservations Card */}
         <Card>
-          <CardContent className="p-4 flex flex-col items-center justify-center text-center h-full">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <CalendarX2 className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <h3 className="font-semibold text-foreground mb-2">
-              No upcoming reservations
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              You don't have any tables booked at the moment. Time to plan your
-              next delicious meal?
-            </p>
-            <div className="flex gap-6">
-              <Link to="/menu">
-                <Button
-                  variant="outline"
-                  className="border-primary text-primary hover:bg-primary/10 hover:text-primary"
-                >
-                  <UtensilsCrossed className="h-4 w-4" />
-                  Explore our Menu
-                </Button>
-              </Link>
-              <Link to="/reservation">
-                <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-                  <CalendarDays className="h-4 w-4" />
-                  Book a Table
-                </Button>
-              </Link>
-            </div>
+          <CardContent className="p-4">
+            {isReservationsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              </div>
+            ) : upcomingReservations.length > 0 ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-foreground">
+                    Upcoming Reservations
+                  </h3>
+                  <Link to="/profile" search={{ tab: 'reservations' }}>
+                    <Button variant="ghost" size="sm" className="text-xs text-primary">
+                      View All
+                    </Button>
+                  </Link>
+                </div>
+                <div className="space-y-3">
+                  {upcomingReservations.map((reservation) => (
+                    <div key={reservation.id} className="p-3 bg-muted/50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                          <CalendarDays className="h-4 w-4 text-primary" />
+                          {formatDate(reservation.reservationDate)}
+                        </div>
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                          {reservation.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {formatTime24to12(reservation.startTime)}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="h-3 w-3" />
+                          {reservation.partySize} guests
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center py-4">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                  <CalendarX2 className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="font-semibold text-foreground text-sm mb-1">
+                  No upcoming reservations
+                </h3>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Time to plan your next meal?
+                </p>
+                <div className="flex gap-2">
+                  <Link to="/menu">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs border-primary text-primary hover:bg-primary/10"
+                    >
+                      <UtensilsCrossed className="h-3 w-3" />
+                      Menu
+                    </Button>
+                  </Link>
+                  <Link to="/reservation">
+                    <Button size="sm" className="text-xs bg-primary text-primary-foreground hover:bg-primary/90">
+                      <CalendarDays className="h-3 w-3" />
+                      Book
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

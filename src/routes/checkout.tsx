@@ -77,11 +77,33 @@ function CheckoutPage() {
     }
   }, [navigate])
 
+  // Calculate pickup time options
+  const getPickupTimeOptions = () => {
+    const now = new Date()
+    const options = [
+      { label: 'As soon as possible', minutes: 0, value: 'asap' },
+      { label: 'In 30 minutes', minutes: 30, value: '30' },
+      { label: 'In 1 hour', minutes: 60, value: '60' },
+      { label: 'In 2 hour', minutes: 120, value: '120' },
+    ]
+
+    return options.map((option) => {
+      const pickupTime = new Date(now)
+      pickupTime.setMinutes(now.getMinutes() + option.minutes)
+      return {
+        ...option,
+        datetime: pickupTime.toISOString(),
+      }
+    })
+  }
+
+  const pickupTimeOptions = getPickupTimeOptions()
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
     address: '',
+    pickupTime: pickupTimeOptions[0].value, // Default to ASAP
     notes: '',
   })
   // Fetch user profile if authenticated
@@ -96,6 +118,7 @@ function CheckoutPage() {
             email: profile.email || '',
             phone: profile.phone || '',
             address: profile.address || '',
+            pickupTime: pickupTimeOptions[0].value, // Default to ASAP
             notes: '',
           })
         })
@@ -112,8 +135,8 @@ function CheckoutPage() {
     (sum, item) => sum + item.price * item.quantity,
     0,
   )
-  const deliveryFee = orderType === 'DELIVERY' ? 5.99 : 0
-  const tax = subtotal * 0.1
+  const deliveryFee = orderType === 'DELIVERY' ? 5.0 : 0
+  const tax = subtotal * 0.08
   const total = subtotal + tax + deliveryFee
 
   const handleInputChange = (
@@ -121,6 +144,10 @@ function CheckoutPage() {
   ) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handlePickupTimeChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, pickupTime: value }))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -173,6 +200,16 @@ function CheckoutPage() {
         if (orderType === 'DELIVERY' && formData.address) {
           orderRequest.deliveryAddress = formData.address
         }
+
+      // Add estimated pickup time for takeaway orders
+      if (orderType === 'TAKEAWAY' && formData.pickupTime) {
+        const selectedOption = pickupTimeOptions.find(
+          (opt) => opt.value === formData.pickupTime,
+        )
+        if (selectedOption) {
+          orderRequest.estimatedPickupTime = selectedOption.datetime
+        }
+      }
 
         createdOrder = await createMemberOrder(orderRequest)
       }
@@ -366,6 +403,38 @@ function CheckoutPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Right Column - Pickup Time (only for takeaway) */}
+                    {isTakeaway && (
+                      <div className="flex flex-col gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="pickupTime">Pickup Time</Label>
+                          <div className="space-y-2">
+                            {pickupTimeOptions.map((option) => (
+                              <label
+                                key={option.value}
+                                className="flex items-center gap-2 p-2 rounded-lg border border-border cursor-pointer hover:bg-muted/50 transition-colors"
+                              >
+                                <Input
+                                  type="radio"
+                                  name="pickupTime"
+                                  value={option.value}
+                                  checked={formData.pickupTime === option.value}
+                                  onChange={() =>
+                                    handlePickupTimeChange(option.value)
+                                  }
+                                  className="h-4 w-4 accent-primary"
+                                  required={isTakeaway}
+                                />
+                                <span className="text-sm text-foreground">
+                                  {option.label}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -470,6 +539,12 @@ function CheckoutPage() {
                           ${subtotal.toFixed(2)}
                         </span>
                       </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Tax (8%)</span>
+                        <span className="text-foreground">
+                          ${tax.toFixed(2)}
+                        </span>
+                      </div>
                       {isDelivery && (
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
@@ -480,12 +555,6 @@ function CheckoutPage() {
                           </span>
                         </div>
                       )}
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tax (10%)</span>
-                        <span className="text-foreground">
-                          ${tax.toFixed(2)}
-                        </span>
-                      </div>
                       <div className="flex justify-between font-semibold pt-2 border-t border-border text-lg">
                         <span className="text-foreground">Total</span>
                         <span className="text-primary">

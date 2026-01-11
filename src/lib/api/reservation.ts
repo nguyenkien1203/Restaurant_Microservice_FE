@@ -131,3 +131,22 @@ export async function createReservation(
 
     return response.json()
 }
+
+/**
+ * Get the current user's reservations
+ */
+export async function getMyReservations(): Promise<ReservationResponse[]> {
+    const response = await fetch(`${API_BASE_URL}/reservations/my-reservations`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch reservations: ${response.statusText}`)
+    }
+
+    return response.json()
+}
