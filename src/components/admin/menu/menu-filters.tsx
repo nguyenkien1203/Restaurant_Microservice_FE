@@ -50,7 +50,7 @@ export function MenuFilters({
         placeholder="Search menu items by name..."
       />
 
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {/* Category Filter */}
         <FilterDropdown
           label="Category"

@@ -77,3 +77,27 @@ export async function getOrderById(orderId: string): Promise<Order> {
 
   return response.json()
 }
+
+/**
+ * Get all orders for admin
+ */
+export async function getAdminOrders(): Promise<Order[]> {
+  const response = await fetch(API_ENDPOINTS.order.admin, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      triggerSessionExpired()
+      throw new Error('Session expired')
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || `Failed to fetch orders: ${response.status}`)
+  }
+
+  return response.json()
+}

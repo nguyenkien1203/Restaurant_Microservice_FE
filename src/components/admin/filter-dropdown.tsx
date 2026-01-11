@@ -32,11 +32,11 @@ export function FilterDropdown({
   }, [])
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className="relative shrink-0" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors',
+          'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors whitespace-nowrap',
           hasActiveFilters
             ? 'border-primary bg-primary/5 text-primary'
             : 'border-border bg-card text-foreground hover:bg-accent',

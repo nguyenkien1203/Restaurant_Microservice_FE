@@ -1,0 +1,326 @@
+import {
+  X,
+  Package2,
+  Handbag,
+  Clock,
+  User,
+  UserCircle,
+  MapPin,
+  CreditCard,
+  Receipt,
+} from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+import type { Order, OrderType } from '@/lib/types/order'
+import { OrderStatusBadge } from '@/components/order/order-status-badge'
+
+interface OrderDetailsCardProps {
+  order: Order
+  onClose: () => void
+}
+
+const orderTypeConfig: Record<
+  OrderType,
+  { icon: React.ElementType; label: string; color: string; bgColor: string }
+> = {
+  DELIVERY: {
+    icon: Package2,
+    label: 'Delivery',
+    color: 'text-green-600',
+    bgColor: 'bg-green-100',
+  },
+  TAKEAWAY: {
+    icon: Handbag,
+    label: 'Takeaway',
+    color: 'text-orange-600',
+    bgColor: 'bg-orange-100',
+  },
+  PRE_ORDER: {
+    icon: Clock,
+    label: 'Pre-Order',
+    color: 'text-purple-600',
+    bgColor: 'bg-purple-100',
+  },
+}
+
+function formatDate(dateString?: string) {
+  if (!dateString) return 'N/A'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export function OrderDetailsCard({ order, onClose }: OrderDetailsCardProps) {
+  const typeConfig = orderTypeConfig[order.orderType]
+  const TypeIcon = typeConfig?.icon || Package2
+  const isMemberOrder = !!order.userId
+
+  const customerName = isMemberOrder
+    ? 'Member'
+    : order.guestName || order.guestEmail || 'Guest'
+
+  const customerInfo = isMemberOrder
+    ? order.userId
+    : order.guestEmail || order.guestPhone || 'No contact info'
+
+  const subtotal = order.orderItems.reduce(
+    (sum, item) => sum + item.subtotal,
+    0,
+  )
+
+  return (
+    <div className="h-full flex flex-col">
+      <Card className="flex-1 flex flex-col overflow-hidden">
+        <CardHeader className="flex-shrink-0 border-b">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div
+                className={cn(
+                  'h-12 w-12 rounded-xl flex items-center justify-center',
+                  typeConfig?.bgColor || 'bg-gray-100',
+                )}
+              >
+                <TypeIcon
+                  className={cn(
+                    'h-6 w-6',
+                    typeConfig?.color || 'text-gray-600',
+                  )}
+                />
+              </div>
+              <div>
+                <CardTitle className="text-xl">Order #{order.id}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {formatDate(order.createdAt)}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={onClose}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex items-center gap-2 mt-3">
+            <OrderStatusBadge status={order.status} size="sm" />
+            <Badge
+              variant="outline"
+              className={cn(
+                'text-xs',
+                order.paymentStatus === 'PAID'
+                  ? 'border-green-200 text-green-700 bg-green-50'
+                  : order.paymentStatus === 'PENDING'
+                    ? 'border-yellow-200 text-yellow-700 bg-yellow-50'
+                    : 'border-red-200 text-red-700 bg-red-50',
+              )}
+            >
+              {order.paymentStatus}
+            </Badge>
+          </div>
+        </CardHeader>
+
+        <CardContent className="flex-1 overflow-y-auto space-y-4 p-5">
+          {/* Customer Information */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              {isMemberOrder ? (
+                <User className="h-4 w-4 text-blue-500" />
+              ) : (
+                <UserCircle className="h-4 w-4 text-orange-500" />
+              )}
+              Customer Information
+            </h3>
+            <div className="bg-muted/30 rounded-lg p-3 space-y-1">
+              <div>
+                <p className="text-xs text-muted-foreground">Name</p>
+                <p className="text-sm font-medium text-foreground">
+                  {customerName}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">
+                  {isMemberOrder ? 'User ID' : 'Contact'}
+                </p>
+                <p className="text-sm text-foreground">{customerInfo}</p>
+              </div>
+              {!isMemberOrder && order.guestPhone && (
+                <div>
+                  <p className="text-xs text-muted-foreground">Phone</p>
+                  <p className="text-sm text-foreground">{order.guestPhone}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Order Type */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-foreground">
+              Order Type
+            </h3>
+            <div className="bg-muted/30 rounded-lg p-3">
+              <div className="flex items-center gap-2">
+                <TypeIcon
+                  className={cn(
+                    'h-5 w-5',
+                    typeConfig?.color || 'text-gray-600',
+                  )}
+                />
+                <span className="text-sm font-medium text-foreground">
+                  {typeConfig?.label || order.orderType}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                {order.orderType === 'DELIVERY'
+                  ? 'Order will be delivered to the address'
+                  : order.orderType === 'TAKEAWAY'
+                    ? 'Customer will pick up the order'
+                    : 'Pre-ordered for scheduled time'}
+              </p>
+            </div>
+          </div>
+
+          {/* Delivery Address */}
+          {order.deliveryAddress && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                Delivery Address
+              </h3>
+              <div className="bg-muted/30 rounded-lg p-3">
+                <p className="text-sm text-foreground">
+                  {order.deliveryAddress}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Order Items */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <Receipt className="h-4 w-4 text-primary" />
+              Order Items ({order.orderItems.length})
+            </h3>
+            <div className="space-y-2">
+              {order.orderItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg"
+                >
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold shrink-0">
+                    {item.quantity}×
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm">
+                      {item.menuItemName}
+                    </p>
+                    {item.notes && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Note: {item.notes}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      ${item.unitPrice.toFixed(2)}
+                    </p>
+                  </div>
+                  <p className="font-semibold text-foreground shrink-0">
+                    ${item.subtotal.toFixed(2)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Totals */}
+          <div className="space-y-2 pt-2 border-t">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-foreground">${subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between font-semibold text-lg pt-2 border-t">
+              <span className="text-foreground">Total</span>
+              <span className="text-primary">
+                ${order.totalAmount.toFixed(2)}
+              </span>
+            </div>
+          </div>
+
+          {/* Payment Information */}
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-primary" />
+              Payment Information
+            </h3>
+            <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Payment Method</p>
+                <p className="text-sm font-medium text-foreground">
+                  {order.paymentMethod}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Payment Status</p>
+                <p
+                  className={cn(
+                    'text-sm font-medium',
+                    order.paymentStatus === 'PAID'
+                      ? 'text-green-600'
+                      : order.paymentStatus === 'PENDING'
+                        ? 'text-yellow-600'
+                        : 'text-red-600',
+                  )}
+                >
+                  {order.paymentStatus}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          {order.notes && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground">
+                Special Instructions
+              </h3>
+              <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+                <p className="text-sm text-amber-800">{order.notes}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Timestamps */}
+          <div className="space-y-2 pt-2 border-t">
+            <div className="text-xs text-muted-foreground space-y-1">
+              {order.estimatedReadyTime && (
+                <div>
+                  <span className="font-medium">Estimated Ready:</span>{' '}
+                  {formatDate(order.estimatedReadyTime)}
+                </div>
+              )}
+              {order.actualDeliveryTime && (
+                <div>
+                  <span className="font-medium">Delivered:</span>{' '}
+                  {formatDate(order.actualDeliveryTime)}
+                </div>
+              )}
+              {order.updatedAt && (
+                <div>
+                  <span className="font-medium">Last Updated:</span>{' '}
+                  {formatDate(order.updatedAt)}
+                </div>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
