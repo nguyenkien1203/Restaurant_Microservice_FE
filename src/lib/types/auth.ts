@@ -61,6 +61,8 @@ export interface AuthContextType extends AuthState {
   updateUser: (updates: Partial<User>) => void
   isAdmin: () => boolean
   isUser: () => boolean
+  sessionExpired: boolean
+  dismissSessionExpired: () => void
 }
 
 // Role constants

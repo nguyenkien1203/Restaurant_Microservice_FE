@@ -1,4 +1,5 @@
 import { API_ENDPOINTS } from '../config'
+import { triggerSessionExpired } from '../auth-context'
 import type { UserProfile, UpdateProfileRequest } from '../types/profile'
 
 class ProfileApiError extends Error {
@@ -21,6 +22,10 @@ export async function getMyProfile(): Promise<UserProfile> {
   })
 
   if (!response.ok) {
+    if (response.status === 401) {
+      triggerSessionExpired()
+      throw new ProfileApiError('Session expired', 401)
+    }
     const errorData = await response.json().catch(() => ({}))
     throw new ProfileApiError(
       errorData.message || 'Failed to fetch profile.',
@@ -44,6 +49,10 @@ export async function updateMyProfile(
   })
 
   if (!response.ok) {
+    if (response.status === 401) {
+      triggerSessionExpired()
+      throw new ProfileApiError('Session expired', 401)
+    }
     const errorData = await response.json().catch(() => ({}))
     throw new ProfileApiError(
       errorData.message || 'Failed to update profile.',

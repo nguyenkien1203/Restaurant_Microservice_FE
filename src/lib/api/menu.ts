@@ -1,4 +1,5 @@
 import { API_BASE_URL } from '../config'
+import { triggerSessionExpired } from '../auth-context'
 import type {
   MenuItem,
   NormalizedMenuItem,
@@ -71,7 +72,8 @@ export async function fetchAdminMenuItems(): Promise<NormalizedMenuItem[]> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('Unauthorized: Please log in as admin')
+      triggerSessionExpired()
+      throw new Error('Session expired')
     }
     throw new Error('Failed to fetch menu items')
   }
@@ -96,7 +98,8 @@ export async function createMenuItem(
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('Unauthorized: Please log in as admin')
+      triggerSessionExpired()
+      throw new Error('Session expired')
     }
     const errorData = await response.json().catch(() => ({}))
     throw new Error(errorData.message || 'Failed to create menu item')
@@ -120,7 +123,8 @@ export async function updateMenuItem(
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('Unauthorized: Please log in as admin')
+      triggerSessionExpired()
+      throw new Error('Session expired')
     }
     if (response.status === 404) {
       throw new Error('Menu item not found')
@@ -142,7 +146,8 @@ export async function deleteMenuItem(id: string): Promise<void> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('Unauthorized: Please log in as admin')
+      triggerSessionExpired()
+      throw new Error('Session expired')
     }
     if (response.status === 404) {
       throw new Error('Menu item not found')
@@ -165,7 +170,8 @@ export async function toggleMenuItemAvailability(
 
   if (!response.ok) {
     if (response.status === 401) {
-      throw new Error('Unauthorized: Please log in as admin')
+      triggerSessionExpired()
+      throw new Error('Session expired')
     }
     if (response.status === 404) {
       throw new Error('Menu item not found')

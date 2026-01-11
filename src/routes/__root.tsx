@@ -10,6 +10,7 @@ import Header from '../components/Header'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 import { Footer } from '../components/footer'
+import { SessionExpiredModal } from '../components/ui/session-expired-modal'
 import type { QueryClient } from '@tanstack/react-query'
 
 interface MyRouterContext {
@@ -29,6 +30,8 @@ function RootComponent() {
       {!isAdminRoute && <Header />}
       <Outlet />
       {!isAdminRoute && <Footer />}
+      {/* Session Expired Modal - shows globally when session expires */}
+      <SessionExpiredModal />
       <TanStackDevtools
         config={{
           position: 'bottom-right',

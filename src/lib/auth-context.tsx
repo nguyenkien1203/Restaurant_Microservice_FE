@@ -4,6 +4,7 @@ import {
   useState,
   useCallback,
   useEffect,
+  useRef,
   type ReactNode,
 } from 'react'
 import {
@@ -24,6 +25,13 @@ import type {
 } from './types/auth'
 
 const AUTH_STORAGE_KEY = 'aperture_dining_user'
+
+// Global event for session expiration - can be triggered from any API call
+const SESSION_EXPIRED_EVENT = 'aperture:session-expired'
+
+export function triggerSessionExpired() {
+  window.dispatchEvent(new CustomEvent(SESSION_EXPIRED_EVENT))
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -51,15 +59,78 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [sessionExpired, setSessionExpired] = useState(false)
+  const isValidatingSession = useRef(false)
 
-  // Load user from localStorage on mount
+  // Handle session expiration
+  const handleSessionExpired = useCallback(() => {
+    if (sessionExpired) return // Prevent multiple triggers
+    setSessionExpired(true)
+    setUser(null)
+    clearStoredUser()
+  }, [sessionExpired])
+
+  // Dismiss session expired modal and navigate to login
+  const dismissSessionExpired = useCallback(() => {
+    setSessionExpired(false)
+  }, [])
+
+  // Validate session by calling auth/me endpoint
+  const validateSession = useCallback(async () => {
+    const storedUser = getStoredUser()
+    if (!storedUser || isValidatingSession.current) return
+
+    isValidatingSession.current = true
+    try {
+      await getAuthMeApi()
+      // Session is valid, user can continue
+    } catch (err) {
+      // Session is invalid - trigger expiry
+      console.log('Session validation failed, logging out')
+      handleSessionExpired()
+    } finally {
+      isValidatingSession.current = false
+    }
+  }, [handleSessionExpired])
+
+  // Load user from localStorage on mount and validate session
   useEffect(() => {
     const storedUser = getStoredUser()
     if (storedUser) {
       setUser(storedUser)
+      // Validate session on mount
+      validateSession()
     }
     setIsLoading(false)
   }, [])
+
+  // Listen for global session expired events (from API calls)
+  useEffect(() => {
+    const handleGlobalSessionExpired = () => {
+      handleSessionExpired()
+    }
+    window.addEventListener(SESSION_EXPIRED_EVENT, handleGlobalSessionExpired)
+    return () => {
+      window.removeEventListener(
+        SESSION_EXPIRED_EVENT,
+        handleGlobalSessionExpired,
+      )
+    }
+  }, [handleSessionExpired])
+
+  // Validate session when window gains focus (user returns to tab)
+  useEffect(() => {
+    const handleFocus = () => {
+      const storedUser = getStoredUser()
+      if (storedUser) {
+        validateSession()
+      }
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [validateSession])
 
   const login = useCallback(async (credentials: LoginRequest) => {
     setIsLoading(true)
@@ -231,6 +302,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUser,
     isAdmin,
     isUser,
+    sessionExpired,
+    dismissSessionExpired,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
