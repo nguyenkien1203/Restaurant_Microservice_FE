@@ -49,7 +49,7 @@ export default function MenuPage() {
     [menuItems],
   )
 
-  const addToCart = (item: NormalizedMenuItem) => {
+  const addToCart = (item: NormalizedMenuItem, notes?: string) => {
     // Prevent adding unavailable items
     if (!item.isAvailable) {
       return
@@ -61,8 +61,14 @@ export default function MenuPage() {
           i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i,
         )
       }
-      return [...prev, { ...item, quantity: 1 }]
+      return [...prev, { ...item, quantity: 1, notes: notes || undefined }]
     })
+  }
+
+  const updateNotes = (id: string, notes: string) => {
+    setCart((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, notes: notes || undefined } : i)),
+    )
   }
 
   const updateQuantity = (id: string, quantity: number) => {
@@ -117,6 +123,7 @@ export default function MenuPage() {
                 items={cart}
                 onUpdateQuantity={updateQuantity}
                 onRemoveItem={removeItem}
+                onUpdateNotes={updateNotes}
               />
             </div>
           </div>

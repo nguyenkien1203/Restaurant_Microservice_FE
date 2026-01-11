@@ -131,6 +131,7 @@ function CheckoutPage() {
       const orderItems: CreateOrderItemRequest[] = cartItems.map((item) => ({
         menuItemId: item.id,
         quantity: item.quantity,
+        notes: item.notes || undefined,
       }))
 
       // Build the order request
@@ -405,16 +406,20 @@ function CheckoutPage() {
                         </p>
                       ) : (
                         cartItems.map((item) => (
-                          <div
-                            key={item.id}
-                            className="flex justify-between text-sm"
-                          >
-                            <span className="text-muted-foreground">
-                              {item.quantity}x {item.name}
-                            </span>
-                            <span className="text-foreground">
-                              ${(item.price * item.quantity).toFixed(2)}
-                            </span>
+                          <div key={item.id} className="space-y-1">
+                            <div className="flex justify-between text-sm">
+                              <span className="text-muted-foreground">
+                                {item.quantity}x {item.name}
+                              </span>
+                              <span className="text-foreground">
+                                ${(item.price * item.quantity).toFixed(2)}
+                              </span>
+                            </div>
+                            {item.notes && (
+                              <p className="text-xs text-muted-foreground italic pl-1">
+                                Note: {item.notes}
+                              </p>
+                            )}
                           </div>
                         ))
                       )}
