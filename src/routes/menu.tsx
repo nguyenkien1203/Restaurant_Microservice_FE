@@ -50,6 +50,10 @@ export default function MenuPage() {
   )
 
   const addToCart = (item: NormalizedMenuItem) => {
+    // Prevent adding unavailable items
+    if (!item.isAvailable) {
+      return
+    }
     setCart((prev) => {
       const existing = prev.find((i) => i.id === item.id)
       if (existing) {

@@ -23,7 +23,7 @@ export function normalizeMenuItem(item: MenuItem): NormalizedMenuItem {
   }
 }
 
-// Fetch all menu items
+// Fetch all menu items (includes unavailable items)
 export async function fetchMenuItems(): Promise<NormalizedMenuItem[]> {
   const response = await fetch(`${API_BASE_URL}/api/menu/all`)
 
@@ -32,10 +32,10 @@ export async function fetchMenuItems(): Promise<NormalizedMenuItem[]> {
   }
 
   const data: MenuItem[] = await response.json()
-  return data.filter((item) => item.isAvailable === 'true').map(normalizeMenuItem)
+  return data.map(normalizeMenuItem)
 }
 
-// Fetch menu items by category
+// Fetch menu items by category (includes unavailable items)
 export async function fetchMenuItemsByCategory(
   category: string,
 ): Promise<NormalizedMenuItem[]> {
@@ -52,7 +52,7 @@ export async function fetchMenuItemsByCategory(
   }
 
   const data: MenuItem[] = await response.json()
-  return data.filter((item) => item.isAvailable === 'true').map(normalizeMenuItem)
+  return data.map(normalizeMenuItem)
 }
 
 // Fetch unique categories from menu items

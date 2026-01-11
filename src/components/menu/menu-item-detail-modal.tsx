@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { X, Plus, Flame, Leaf, Clock, Zap } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { X, Plus, Flame, Leaf, Clock, Zap, XCircle } from 'lucide-react'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
 import { MENU_TAGS } from '@/lib/types/menu'
 
@@ -16,8 +17,10 @@ export function MenuItemDetailModal({
   onAddToCart,
 }: MenuItemDetailModalProps) {
   const handleAddToCart = () => {
-    onAddToCart(item)
-    onClose()
+    if (item.isAvailable) {
+      onAddToCart(item)
+      onClose()
+    }
   }
 
   return (
@@ -44,7 +47,21 @@ export function MenuItemDetailModal({
         </div>
         <CardContent className="px-6">
           <div className="flex justify-between items-start mb-4">
-            <h2 className="text-xl font-bold text-card-foreground">{item.name}</h2>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-xl font-bold text-card-foreground">
+                  {item.name}
+                </h2>
+                {!item.isAvailable && (
+                  <Badge
+                    variant="secondary"
+                    className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200"
+                  >
+                    Out of Stock
+                  </Badge>
+                )}
+              </div>
+            </div>
             <span className="text-xl font-bold text-primary">
               ${item.price.toFixed(2)}
             </span>
@@ -55,13 +72,13 @@ export function MenuItemDetailModal({
           {/* Item details */}
           <div className="flex gap-8 mb-6">
             {item.tags.includes(MENU_TAGS.SPICY) && (
-              <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
+              <span className="bg-red-600 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
                 <Flame className="h-3 w-3" />
                 Spicy
               </span>
             )}
             {item.tags.includes(MENU_TAGS.VEGAN) && (
-              <span className="bg-green-500 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
+              <span className="bg-green-600 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
                 <Leaf className="h-3 w-3" />
                 Vegan
               </span>
@@ -86,8 +103,9 @@ export function MenuItemDetailModal({
 
           {/* Add to cart button */}
           <Button
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-4"
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90 mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleAddToCart}
+            disabled={!item.isAvailable}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add to Order

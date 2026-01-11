@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Plus, Minus, Flame, Leaf } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Minus, Flame, Leaf, XCircle } from 'lucide-react'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
 import { MENU_TAGS } from '@/lib/types/menu'
 
@@ -31,30 +32,39 @@ export function MenuItemCard({
             alt={item.name}
             className="w-32 h-32 object-cover"
           />
-          {/* Dietary badges on image */}
-          <div className="absolute top-1 left-1 flex gap-1">
-            {item.tags.includes(MENU_TAGS.SPICY) && (
-              <span
-                className="bg-red-500 text-white p-1 rounded-full"
-                title="Spicy"
-              >
-                <Flame className="h-3 w-3" />
-              </span>
-            )}
-            {item.tags.includes(MENU_TAGS.VEGAN) && (
-              <span
-                className="bg-green-500 text-white p-1 rounded-full"
-                title="Vegan"
-              >
-                <Leaf className="h-3 w-3" />
-              </span>
-            )}
-          </div>
         </div>
         <CardContent className="flex-1 p-4 flex flex-col justify-between">
           <div>
-            <div className="flex justify-between items-start">
-              <h3 className="font-semibold text-card-foreground">{item.name}</h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-semibold text-card-foreground">
+                {item.name}
+              </h3>
+
+              {/* Dietary badges */}
+              {item.tags.includes(MENU_TAGS.SPICY) && (
+                <span
+                  className="bg-red-600 text-white p-1 rounded-full"
+                  title="Spicy"
+                >
+                  <Flame className="h-3 w-3" />
+                </span>
+              )}
+              {item.tags.includes(MENU_TAGS.VEGAN) && (
+                <span
+                  className="bg-green-600 text-white p-1 rounded-full"
+                  title="Vegan"
+                >
+                  <Leaf className="h-3 w-3" />
+                </span>
+              )}
+              {!item.isAvailable && (
+                <Badge
+                  variant="secondary"
+                  className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200"
+                >
+                  Out of Stock
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
               {item.description}
@@ -90,9 +100,12 @@ export function MenuItemCard({
                 size="sm"
                 onClick={(e) => {
                   e.stopPropagation()
-                  onAddToCart(item)
+                  if (item.isAvailable) {
+                    onAddToCart(item)
+                  }
                 }}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={!item.isAvailable}
+                className="bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add
