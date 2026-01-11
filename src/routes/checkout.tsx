@@ -98,8 +98,8 @@ function CheckoutPage() {
     (sum, item) => sum + item.price * item.quantity,
     0,
   )
-  const deliveryFee = orderType === 'DELIVERY' ? 5.99 : 0
-  const tax = subtotal * 0.1
+  const deliveryFee = orderType === 'DELIVERY' ? 5.0 : 0
+  const tax = subtotal * 0.08
   const total = subtotal + tax + deliveryFee
 
   const handleInputChange = (
@@ -432,6 +432,12 @@ function CheckoutPage() {
                           ${subtotal.toFixed(2)}
                         </span>
                       </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Tax (8%)</span>
+                        <span className="text-foreground">
+                          ${tax.toFixed(2)}
+                        </span>
+                      </div>
                       {isDelivery && (
                         <div className="flex justify-between text-sm">
                           <span className="text-muted-foreground">
@@ -442,12 +448,6 @@ function CheckoutPage() {
                           </span>
                         </div>
                       )}
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Tax (10%)</span>
-                        <span className="text-foreground">
-                          ${tax.toFixed(2)}
-                        </span>
-                      </div>
                       <div className="flex justify-between font-semibold pt-2 border-t border-border text-lg">
                         <span className="text-foreground">Total</span>
                         <span className="text-primary">

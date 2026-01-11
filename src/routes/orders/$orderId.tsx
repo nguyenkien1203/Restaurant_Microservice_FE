@@ -137,6 +137,9 @@ function OrderDetailsPage() {
     (sum, item) => sum + item.subtotal,
     0,
   )
+  // Calculate delivery fee and tax from backend total
+  const deliveryFee = order.orderType === 'DELIVERY' ? 5.0 : 0
+  const tax = order.totalAmount - subtotal - deliveryFee
 
   return (
     <div className="min-h-screen bg-background">
@@ -289,6 +292,20 @@ function OrderDetailsPage() {
                     ${subtotal.toFixed(2)}
                   </span>
                 </div>
+                {deliveryFee > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Delivery Fee</span>
+                    <span className="text-foreground">
+                      ${deliveryFee.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {tax > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Tax (8%)</span>
+                    <span className="text-foreground">${tax.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-semibold text-lg pt-2 border-t border-border">
                   <span className="text-foreground">Total</span>
                   <span className="text-primary">
