@@ -183,6 +183,34 @@ function OrderConfirmationPage() {
                 </div>
               </div>
 
+              {/* Estimated Pickup Time for Takeaway Orders */}
+              {order.orderType === 'TAKEAWAY' && order.estimatedPickupTime && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        Estimated Pickup Time
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(order.estimatedPickupTime).toLocaleDateString(
+                          'en-US',
+                          {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            timeZone: 'Asia/Bangkok', // UTC+7
+                          },
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Delivery Address */}
               {order.orderType === 'DELIVERY' && order.deliveryAddress && (
                 <div className="mt-4 pt-4 border-t border-border">

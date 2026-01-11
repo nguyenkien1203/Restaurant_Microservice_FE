@@ -18,6 +18,7 @@ export interface CreateMemberOrderRequest {
   items: CreateOrderItemRequest[]
   paymentMethod: PaymentMethod
   deliveryAddress?: string
+  estimatedPickupTime?: string
   notes?: string
 }
 
@@ -53,6 +54,7 @@ export interface Order {
   driverId: string | null
   notes: string | null
   estimatedReadyTime: string | null
+  estimatedPickupTime: string | null
   actualDeliveryTime: string | null
   orderItems: OrderItem[]
   createdAt?: string

@@ -217,6 +217,21 @@ function OrderDetailsPage() {
                   </p>
                 </div>
               </div>
+              
+              {/* Estimated Pickup Time */}
+              {order.estimatedPickupTime && (
+                <div className="mt-4 pt-4 border-t border-border flex items-start gap-3">
+                  <Clock className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">
+                      Estimated Pickup Time
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatDate(order.estimatedPickupTime)}
+                    </p>
+                  </div>
+                </div>
+              )}  
 
               {/* Delivery Address */}
               {order.deliveryAddress && (
