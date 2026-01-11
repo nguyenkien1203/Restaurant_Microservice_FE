@@ -13,6 +13,7 @@ import {
   FileText,
   AlertCircle,
   Loader2,
+  ClipboardList,
 } from 'lucide-react'
 import { getOrderById } from '@/lib/api/order'
 import type { Order, OrderType } from '@/lib/types/order'
@@ -279,10 +280,12 @@ function OrderConfirmationPage() {
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() => navigate({ to: '/' })}
+              onClick={() =>
+                navigate({ to: '/profile', search: { tab: 'orders' } })
+              }
             >
-              <Home className="h-4 w-4 mr-2" />
-              Back to Home
+              <ClipboardList className="h-4 w-4 mr-2" />
+              View Order History
             </Button>
             <Button
               className="flex-1"

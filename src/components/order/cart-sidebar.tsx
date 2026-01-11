@@ -9,9 +9,12 @@ import {
   Handbag,
   ShoppingBag,
   Package2,
+  Edit2,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
 
 export type OrderType = 'PRE_ORDER' | 'TAKEAWAY' | 'DELIVERY'
@@ -21,6 +24,7 @@ const ORDER_TYPE_STORAGE_KEY = 'aperture_dining_order_type'
 
 export interface CartItem extends NormalizedMenuItem {
   quantity: number
+  notes?: string
 }
 
 export function saveCartToStorage(items: CartItem[]): void {
@@ -91,17 +95,21 @@ interface CartSidebarProps {
   items: CartItem[]
   onUpdateQuantity: (id: string, quantity: number) => void
   onRemoveItem: (id: string) => void
+  onUpdateNotes?: (id: string, notes: string) => void
 }
 
 export function CartSidebar({
   items,
   onUpdateQuantity,
   onRemoveItem,
+  onUpdateNotes,
 }: CartSidebarProps) {
   const navigate = useNavigate()
   const [orderType, setOrderType] = useState<OrderType>(() => {
     return getOrderTypeFromStorage() || 'TAKEAWAY'
   })
+  const [editingNotesId, setEditingNotesId] = useState<string | null>(null)
+  const [notesValue, setNotesValue] = useState('')
 
   // Save cart and orderType to localStorage whenever they change
   useEffect(() => {
@@ -161,49 +169,132 @@ export function CartSidebar({
           ) : (
             <>
               <div className="divide-y divide-border/50 mb-4 max-h-64 overflow-y-auto">
-                {items.map((item) => (
-                  <div key={item.id} className="py-3 first:pt-0 last:pb-0">
-                    {/* Line 1: Item name and price */}
-                    <div className="flex justify-between items-start text-sm">
-                      <span className="text-card-foreground font-medium">
-                        {item.name}
-                      </span>
-                      <span className="text-muted-foreground">
-                        ${(item.price * item.quantity).toFixed(2)}
-                      </span>
-                    </div>
-                    {/* Line 2: Quantity controls and trash */}
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() =>
-                            onUpdateQuantity(item.id, item.quantity - 1)
-                          }
-                          className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:bg-accent transition-colors"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="w-6 text-center font-medium text-card-foreground text-sm">
-                          {item.quantity}
+                {items.map((item) => {
+                  const isEditingNotes = editingNotesId === item.id
+
+                  const handleStartEditNotes = () => {
+                    setEditingNotesId(item.id)
+                    setNotesValue(item.notes || '')
+                  }
+
+                  const handleSaveNotes = () => {
+                    if (onUpdateNotes) {
+                      onUpdateNotes(item.id, notesValue.trim())
+                    }
+                    setEditingNotesId(null)
+                    setNotesValue('')
+                  }
+
+                  const handleCancelEditNotes = () => {
+                    setEditingNotesId(null)
+                    setNotesValue('')
+                  }
+
+                  return (
+                    <div key={item.id} className="py-3 first:pt-0 last:pb-0">
+                      {/* Line 1: Item name and price */}
+                      <div className="flex justify-between items-start text-sm">
+                        <span className="text-card-foreground font-medium">
+                          {item.name}
                         </span>
+                        <span className="text-muted-foreground">
+                          ${(item.price * item.quantity).toFixed(2)}
+                        </span>
+                      </div>
+
+                      {/* Notes section */}
+                      {isEditingNotes ? (
+                        <div className="mt-2 flex items-center gap-2">
+                          <Input
+                            value={notesValue}
+                            onChange={(e) => setNotesValue(e.target.value)}
+                            placeholder="Add a note (e.g., No onions)"
+                            className="text-sm h-8"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                handleSaveNotes()
+                              } else if (e.key === 'Escape') {
+                                handleCancelEditNotes()
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <button
+                            onClick={handleSaveNotes}
+                            className="h-8 px-2 rounded border border-border hover:bg-accent transition-colors"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={handleCancelEditNotes}
+                            className="h-8 px-2 rounded border border-border hover:bg-accent transition-colors"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="mt-2 flex items-center gap-2">
+                          {item.notes ? (
+                            <div className="flex-1 flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground italic">
+                                Note: {item.notes}
+                              </span>
+                              {onUpdateNotes && (
+                                <button
+                                  onClick={handleStartEditNotes}
+                                  className="h-6 w-6 rounded flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </button>
+                              )}
+                            </div>
+                          ) : (
+                            onUpdateNotes && (
+                              <button
+                                onClick={handleStartEditNotes}
+                                className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 transition-colors"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                                Add note
+                              </button>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {/* Line 2: Quantity controls and trash */}
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() =>
+                              onUpdateQuantity(item.id, item.quantity - 1)
+                            }
+                            className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="w-6 text-center font-medium text-card-foreground text-sm">
+                            {item.quantity}
+                          </span>
+                          <button
+                            onClick={() =>
+                              onUpdateQuantity(item.id, item.quantity + 1)
+                            }
+                            className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
                         <button
-                          onClick={() =>
-                            onUpdateQuantity(item.id, item.quantity + 1)
-                          }
-                          className="h-7 w-7 rounded-full border border-border flex items-center justify-center hover:bg-accent transition-colors"
+                          onClick={() => onRemoveItem(item.id)}
+                          className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
                         >
-                          <Plus className="h-3 w-3" />
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
-                      <button
-                        onClick={() => onRemoveItem(item.id)}
-                        className="h-7 w-7 rounded-full flex items-center justify-center text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               <div className="border-t border-border pt-4 space-y-2">

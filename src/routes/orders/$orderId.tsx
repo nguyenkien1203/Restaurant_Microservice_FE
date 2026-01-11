@@ -270,7 +270,7 @@ function OrderDetailsPage() {
                           Note: {item.notes}
                         </p>
                       )}
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mt-1">
                         ${item.unitPrice.toFixed(2)} each
                       </p>
                     </div>
