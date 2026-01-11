@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AdminPageHeader } from '@/components/admin'
 
 export const Route = createFileRoute('/admin/analytics')({
   component: AdminAnalytics,
@@ -8,10 +9,7 @@ export const Route = createFileRoute('/admin/analytics')({
 function AdminAnalytics() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Analytics</h1>
-        <p className="text-muted-foreground mt-2">View detailed analytics and reports</p>
-      </div>
+      <AdminPageHeader title="Analytics" description="View detailed analytics and reports" />
 
       <Card>
         <CardHeader>

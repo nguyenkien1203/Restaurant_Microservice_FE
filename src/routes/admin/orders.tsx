@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-
+import { AdminPageHeader } from '@/components/admin/admin-page-header'
 export const Route = createFileRoute('/admin/orders')({
   component: AdminOrders,
 })
@@ -26,10 +26,10 @@ const statusColors: Record<string, string> = {
 function AdminOrders() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Orders</h1>
-        <p className="text-muted-foreground mt-2">Manage and track all restaurant orders</p>
-      </div>
+      <AdminPageHeader
+        title="Orders"
+        description="Manage and track all restaurant orders"
+      />
 
       <Card>
         <CardHeader>

@@ -13,6 +13,7 @@ import {
   Settings,
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
+import { AdminPageHeader } from '@/components/admin/admin-page-header'
 
 export const Route = createFileRoute('/admin/')({
   component: AdminDashboard,
@@ -22,15 +23,13 @@ function AdminDashboard() {
   const { user } = useAuth()
   const displayName = user?.fullName || user?.email?.split('@')[0] || 'Admin'
   const firstName = displayName.split(' ')[0]
-  
+
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground mt-2">
-          Welcome back, {firstName}! Here's what's happening at your restaurant today.
-        </p>
-      </div>
+      <AdminPageHeader
+        title="Dashboard"
+        description={`Welcome back, ${firstName}! Here's what's happening at your restaurant today.`}
+      />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { AdminPageHeader } from '@/components/admin'
 
 export const Route = createFileRoute('/admin/customers')({
   component: AdminCustomers,
@@ -8,17 +9,19 @@ export const Route = createFileRoute('/admin/customers')({
 function AdminCustomers() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground">Customers</h1>
-        <p className="text-muted-foreground mt-2">Manage customer information and history</p>
-      </div>
+      <AdminPageHeader
+        title="Customers"
+        description="Manage Aperture customer information"
+      />
 
       <Card>
         <CardHeader>
           <CardTitle>Customer List</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-muted-foreground">Customer management functionality coming soon...</p>
+          <p className="text-muted-foreground">
+            Customer management functionality coming soon...
+          </p>
         </CardContent>
       </Card>
     </div>
