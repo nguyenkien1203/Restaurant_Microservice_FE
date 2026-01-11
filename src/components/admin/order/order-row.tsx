@@ -1,6 +1,6 @@
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Package2, Handbag, Clock, User, UserCircle } from 'lucide-react'
+import { Package2, Handbag, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Order, OrderType, OrderStatus } from '@/lib/types/order'
 import { StatusUpdateDropdown } from './status-update-dropdown'
@@ -66,8 +66,11 @@ export function OrderRow({
   const customerInfo = isMemberOrder
     ? order.userId
     : order.guestEmail || order.guestPhone || 'No contact info'
-  
-  const totalItems = order.orderItems.reduce((acc, item) => acc + item.quantity, 0)
+
+  const totalItems = order.orderItems.reduce(
+    (acc, item) => acc + item.quantity,
+    0,
+  )
 
   const handleStatusUpdate = async (
     newStatus: OrderStatus,
@@ -89,30 +92,29 @@ export function OrderRow({
       <TableCell className="py-3">
         <div className="flex items-center gap-3">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="font-medium text-foreground">Order #{order.id}</p>
-              <span
-                className={cn(
-                  'text-xs px-2 py-0.5 rounded',
-                  typeConfig?.color || 'text-gray-600 bg-gray-100',
-                )}
-              >
-                {typeConfig?.label || order.orderType}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {formatDate(order.createdAt)}
-            </p>
+            <p className="font-medium text-foreground">Order #{order.id}</p>
           </div>
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="py-3">
+        <span className="text-sm text-foreground">
+          {formatDate(order.createdAt)}
+        </span>
+      </TableCell>
+      <TableCell className="py-3">
+        <div className="flex items-center gap-3">
+          <span
+            className={cn(
+              'text-xs px-2 py-0.5 rounded',
+              typeConfig?.color || 'text-gray-600 bg-gray-100',
+            )}
+          >
+            {typeConfig?.label || order.orderType}
+          </span>
+        </div>
+      </TableCell>
+      {/* <TableCell>
         <div className="flex items-center gap-2">
-          {isMemberOrder ? (
-            <User className="h-4 w-4 text-blue-500" />
-          ) : (
-            <UserCircle className="h-4 w-4 text-orange-500" />
-          )}
           <div className="min-w-0">
             <p className="text-sm font-medium text-foreground truncate">
               {customerName}
@@ -122,7 +124,7 @@ export function OrderRow({
             </p>
           </div>
         </div>
-      </TableCell>
+      </TableCell> */}
       <TableCell>
         <span className="text-sm text-foreground">
           {totalItems} item
@@ -130,7 +132,7 @@ export function OrderRow({
         </span>
       </TableCell>
       <TableCell>
-        <span className="font-semibold text-primary">
+        <span className="text-foreground">
           ${order.totalAmount.toFixed(2)}
         </span>
       </TableCell>

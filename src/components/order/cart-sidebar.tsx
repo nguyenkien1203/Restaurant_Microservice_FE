@@ -124,7 +124,7 @@ export function CartSidebar({
     (sum, item) => sum + item.price * item.quantity,
     0,
   )
-  const tax = subtotal * 0.1
+  const tax = subtotal * 0.08
   const total = subtotal + tax
 
   return (
@@ -305,7 +305,7 @@ export function CartSidebar({
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax (10%)</span>
+                <span className="text-muted-foreground">Tax (8%)</span>
                   <span className="text-card-foreground">
                     ${tax.toFixed(2)}
                   </span>

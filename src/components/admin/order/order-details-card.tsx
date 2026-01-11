@@ -85,7 +85,13 @@ export function OrderDetailsCard({
     (sum, item) => sum + item.subtotal,
     0,
   )
-  const totalItems = order.orderItems.reduce((acc, item) => acc + item.quantity, 0)
+  const totalItems = order.orderItems.reduce(
+    (acc, item) => acc + item.quantity,
+    0,
+  )
+  // Calculate delivery fee and tax from backend total
+  const deliveryFee = order.orderType === 'DELIVERY' ? 5.0 : 0
+  const tax = order.totalAmount - subtotal - deliveryFee
 
   const handleStatusUpdate = async (
     newStatus: OrderStatus,
@@ -214,6 +220,20 @@ export function OrderDetailsCard({
             </div>
           </div>
 
+          {order.estimatedPickupTime && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Estimated Pickup Time
+              </h3>
+              <div className="bg-muted/30 rounded-lg p-3">
+                <p className="text-sm text-foreground">
+                  {formatDate(order.estimatedPickupTime)}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Delivery Address */}
           {order.deliveryAddress && (
             <div className="space-y-2">
@@ -271,6 +291,20 @@ export function OrderDetailsCard({
               <span className="text-muted-foreground">Subtotal</span>
               <span className="text-foreground">${subtotal.toFixed(2)}</span>
             </div>
+            {tax > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Tax (8%)</span>
+                <span className="text-foreground">${tax.toFixed(2)}</span>
+              </div>
+            )}
+            {deliveryFee > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Delivery Fee</span>
+                <span className="text-foreground">
+                  ${deliveryFee.toFixed(2)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between font-semibold text-lg pt-2 border-t">
               <span className="text-foreground">Total</span>
               <span className="text-primary">
