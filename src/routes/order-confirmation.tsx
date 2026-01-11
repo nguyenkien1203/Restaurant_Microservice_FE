@@ -1,56 +1,41 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
   CheckCircle2,
   Clock,
   MapPin,
-  Phone,
   UtensilsCrossed,
   Package2,
   Handbag,
   Home,
   FileText,
-  ChefHat,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { getOrderById } from '@/lib/api/order'
+import type { Order, OrderType } from '@/lib/types/order'
 
 export const Route = createFileRoute('/order-confirmation')({
   component: OrderConfirmationPage,
   validateSearch: (search: Record<string, unknown>) => {
     return {
-      orderId: (search.orderId as string) || `ORD-${Date.now()}`,
+      orderId: (search.orderId as string) || '',
     }
   },
 })
 
-// Mock order data
-const mockOrder = {
-  id: 'ORD-1704931200',
-  type: 'DINE_IN' as const,
-  status: 'confirmed',
-  items: [
-    { id: '1', name: 'Grilled Salmon', price: 28.99, quantity: 2 },
-    { id: '2', name: 'Caesar Salad', price: 12.99, quantity: 1 },
-    { id: '3', name: 'Tiramisu', price: 9.99, quantity: 2 },
-  ],
-  subtotal: 90.95,
-  tax: 9.1,
-  deliveryFee: 0,
-  total: 100.05,
-  estimatedTime: '25-35',
-  tableNumber: 12,
-  deliveryAddress: '123 Main Street, Melbourne VIC 3000',
-}
-
-const orderTypeConfig = {
-  DINE_IN: {
-    icon: UtensilsCrossed,
-    title: 'Dine In',
-    description: 'Your order will be served at your table',
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-  },
+const orderTypeConfig: Record<
+  OrderType,
+  {
+    icon: typeof Package2
+    title: string
+    description: string
+    color: string
+    bgColor: string
+  }
+> = {
   TAKEAWAY: {
     icon: Handbag,
     title: 'Takeaway',
@@ -78,8 +63,73 @@ function OrderConfirmationPage() {
   const navigate = useNavigate()
   const { orderId } = Route.useSearch()
 
-  const config = orderTypeConfig[mockOrder.type]
-  const TypeIcon = config.icon
+  const [order, setOrder] = useState<Order | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!orderId) {
+      setError('No order ID provided')
+      setIsLoading(false)
+      return
+    }
+
+    getOrderById(orderId)
+      .then((fetchedOrder) => {
+        setOrder(fetchedOrder)
+        setIsLoading(false)
+      })
+      .catch((err) => {
+        console.error('Failed to fetch order:', err)
+        setError(
+          err instanceof Error ? err.message : 'Failed to load order details',
+        )
+        setIsLoading(false)
+      })
+  }, [orderId])
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading order details...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state
+  if (error || !order) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="inline-flex items-center justify-center h-16 w-16 rounded-full bg-destructive/10 mb-4">
+            <AlertCircle className="h-8 w-8 text-destructive" />
+          </div>
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            Unable to Load Order
+          </h2>
+          <p className="text-muted-foreground mb-6">
+            {error || 'Order not found'}
+          </p>
+          <Button onClick={() => navigate({ to: '/menu' })}>
+            Return to Menu
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const config = orderTypeConfig[order.orderType]
+  const TypeIcon = config?.icon || Package2
+
+  // Calculate subtotal from order items
+  const subtotal = order.orderItems.reduce(
+    (sum, item) => sum + item.subtotal,
+    0,
+  )
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,29 +147,91 @@ function OrderConfirmationPage() {
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border">
           <span className="text-sm text-muted-foreground">Order ID:</span>
           <span className="font-mono font-semibold text-foreground">
-            {orderId}
+            #{order.id}
           </span>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 pb-8">
         <div className="max-w-3xl mx-auto space-y-6">
+          {/* Order Type & Status */}
+          <Card>
+            <CardContent>
+              <div className="flex items-center gap-4">
+                <div
+                  className={`h-12 w-12 rounded-full ${config?.bgColor || 'bg-primary/10'} flex items-center justify-center`}
+                >
+                  <TypeIcon
+                    className={`h-6 w-6 ${config?.color || 'text-primary'}`}
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground">
+                    {config?.title || order.orderType}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {config?.description}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-500/10 text-yellow-600">
+                    {order.status}
+                  </span>
+                </div>
+              </div>
+
+              {/* Delivery Address */}
+              {order.orderType === 'DELIVERY' && order.deliveryAddress && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        Delivery Address
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {order.deliveryAddress}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Order Notes */}
+              {order.notes && (
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-sm font-medium text-foreground mb-1">
+                    Special Instructions
+                  </p>
+                  <p className="text-sm text-muted-foreground">{order.notes}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Order Details */}
           <Card>
-            <CardContent className="pt-6">
+            <CardContent>
               <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
                 <FileText className="h-5 w-5 text-primary" />
                 Order Details
               </h3>
 
               <div className="space-y-3 mb-4">
-                {mockOrder.items.map((item) => (
+                {order.orderItems.map((item) => (
                   <div key={item.id} className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
-                      {item.quantity}x {item.name}
-                    </span>
-                    <span className="text-foreground">
-                      ${(item.price * item.quantity).toFixed(2)}
+                    <div className="flex-1">
+                      <span className="text-foreground">
+                        {item.quantity}x {item.menuItemName}
+                      </span>
+                      {item.notes && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          Note: {item.notes}
+                        </p>
+                      )}
+                    </div>
+                    <span className="text-foreground ml-4">
+                      ${item.subtotal.toFixed(2)}
                     </span>
                   </div>
                 ))}
@@ -129,27 +241,33 @@ function OrderConfirmationPage() {
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="text-foreground">
-                    ${mockOrder.subtotal.toFixed(2)}
-                  </span>
-                </div>
-                {mockOrder.deliveryFee > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Delivery Fee</span>
-                    <span className="text-foreground">
-                      ${mockOrder.deliveryFee.toFixed(2)}
-                    </span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Tax (10%)</span>
-                  <span className="text-foreground">
-                    ${mockOrder.tax.toFixed(2)}
+                    ${subtotal.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between font-semibold pt-2 border-t border-border text-lg">
                   <span className="text-foreground">Total</span>
                   <span className="text-primary">
-                    ${mockOrder.total.toFixed(2)}
+                    ${order.totalAmount.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Payment Info */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Payment Method</span>
+                  <span className="text-foreground">{order.paymentMethod}</span>
+                </div>
+                <div className="flex justify-between text-sm mt-1">
+                  <span className="text-muted-foreground">Payment Status</span>
+                  <span
+                    className={
+                      order.paymentStatus === 'PAID'
+                        ? 'text-green-600'
+                        : 'text-yellow-600'
+                    }
+                  >
+                    {order.paymentStatus}
                   </span>
                 </div>
               </div>
@@ -161,17 +279,17 @@ function OrderConfirmationPage() {
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() => navigate({ to: '/menu' })}
+              onClick={() => navigate({ to: '/' })}
             >
-              <UtensilsCrossed className="h-4 w-4 mr-2" />
-              Order More
+              <Home className="h-4 w-4 mr-2" />
+              Back to Home
             </Button>
             <Button
               className="flex-1"
               onClick={() => navigate({ to: '/menu' })}
             >
               <UtensilsCrossed className="h-4 w-4 mr-2" />
-              Complete Order
+              Make New Order
             </Button>
           </div>
         </div>

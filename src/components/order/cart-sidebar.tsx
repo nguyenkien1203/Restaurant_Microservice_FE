@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import {
   Minus,
@@ -15,6 +15,60 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
 
 export type OrderType = 'PRE_ORDER' | 'TAKEAWAY' | 'DELIVERY'
+
+const CART_STORAGE_KEY = 'aperture_dining_cart'
+const ORDER_TYPE_STORAGE_KEY = 'aperture_dining_order_type'
+
+export interface CartItem extends NormalizedMenuItem {
+  quantity: number
+}
+
+export function saveCartToStorage(items: CartItem[]): void {
+  try {
+    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items))
+  } catch (error) {
+    console.error('Failed to save cart to storage:', error)
+  }
+}
+
+export function getCartFromStorage(): CartItem[] {
+  try {
+    const stored = localStorage.getItem(CART_STORAGE_KEY)
+    if (stored) {
+      return JSON.parse(stored)
+    }
+  } catch (error) {
+    console.error('Failed to get cart from storage:', error)
+    localStorage.removeItem(CART_STORAGE_KEY)
+  }
+  return []
+}
+
+export function saveOrderTypeToStorage(orderType: OrderType): void {
+  try {
+    localStorage.setItem(ORDER_TYPE_STORAGE_KEY, orderType)
+  } catch (error) {
+    console.error('Failed to save order type to storage:', error)
+  }
+}
+
+export function getOrderTypeFromStorage(): OrderType | null {
+  try {
+    const stored = localStorage.getItem(ORDER_TYPE_STORAGE_KEY)
+    if (stored && ['PRE_ORDER', 'TAKEAWAY', 'DELIVERY'].includes(stored)) {
+      return stored as OrderType
+    }
+  } catch (error) {
+    console.error('Failed to get order type from storage:', error)
+    localStorage.removeItem(ORDER_TYPE_STORAGE_KEY)
+  }
+  return null
+}
+
+export function clearCartStorage(): void {
+  localStorage.removeItem(CART_STORAGE_KEY)
+  localStorage.removeItem(ORDER_TYPE_STORAGE_KEY)
+}
 
 const orderTypeOptions: {
   value: OrderType
@@ -33,10 +87,6 @@ const orderTypeOptions: {
   },
 ]
 
-interface CartItem extends NormalizedMenuItem {
-  quantity: number
-}
-
 interface CartSidebarProps {
   items: CartItem[]
   onUpdateQuantity: (id: string, quantity: number) => void
@@ -49,7 +99,18 @@ export function CartSidebar({
   onRemoveItem,
 }: CartSidebarProps) {
   const navigate = useNavigate()
-  const [orderType, setOrderType] = useState<OrderType>('TAKEAWAY')
+  const [orderType, setOrderType] = useState<OrderType>(() => {
+    return getOrderTypeFromStorage() || 'TAKEAWAY'
+  })
+
+  // Save cart and orderType to localStorage whenever they change
+  useEffect(() => {
+    saveCartToStorage(items)
+  }, [items])
+
+  useEffect(() => {
+    saveOrderTypeToStorage(orderType)
+  }, [orderType])
 
   const subtotal = items.reduce(
     (sum, item) => sum + item.price * item.quantity,
@@ -167,6 +228,10 @@ export function CartSidebar({
               <Button
                 className="w-full mt-4 bg-primary text-primary-foreground hover:bg-primary/90"
                 onClick={() => {
+                  // Save cart and orderType before navigating
+                  saveCartToStorage(items)
+                  saveOrderTypeToStorage(orderType)
+
                   if (orderType === 'DELIVERY' || orderType === 'TAKEAWAY') {
                     navigate({ to: '/checkout' })
                   } else {
@@ -176,6 +241,7 @@ export function CartSidebar({
                     })
                   }
                 }}
+                disabled={items.length === 0}
               >
                 Proceed to Checkout
               </Button>

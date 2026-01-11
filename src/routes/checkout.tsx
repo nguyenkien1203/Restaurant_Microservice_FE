@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,38 +14,87 @@ import {
   User,
   CreditCard,
   CheckCircle,
+  Mail,
+  Clock,
+  Pencil,
+  AlertCircle,
 } from 'lucide-react'
-import type { OrderType } from '@/components/order/cart-sidebar'
+import type { OrderType, CartItem } from '@/components/order/cart-sidebar'
+import {
+  getCartFromStorage,
+  getOrderTypeFromStorage,
+  clearCartStorage,
+} from '@/components/order/cart-sidebar'
+import { useAuth } from '@/lib/auth-context'
+import type { UserProfile } from '@/lib/types/profile'
+import { getMyProfile } from '@/lib/api/profile'
+import { createMemberOrder } from '@/lib/api/order'
+import type {
+  CreateMemberOrderRequest,
+  CreateOrderItemRequest,
+} from '@/lib/types/order'
 
 export const Route = createFileRoute('/checkout')({
   component: CheckoutPage,
 })
 
-// Mock cart data - in real app, this would come from global state/context
-const mockCartItems = [
-  { id: '1', name: 'Grilled Salmon', price: 28.99, quantity: 2 },
-  { id: '2', name: 'Caesar Salad', price: 12.99, quantity: 1 },
-  { id: '3', name: 'Tiramisu', price: 9.99, quantity: 2 },
-]
-
 function CheckoutPage() {
   const navigate = useNavigate()
+  const { isAuthenticated, user } = useAuth()
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [orderType, setOrderType] = useState<OrderType>('TAKEAWAY')
 
-  // In real app, get this from URL params or global state
-  const [orderType] = useState<OrderType>('DELIVERY')
+  // Load cart and order type from localStorage on mount
+  useEffect(() => {
+    const storedCart = getCartFromStorage()
+    const storedOrderType = getOrderTypeFromStorage()
+
+    if (storedCart.length > 0) {
+      setCartItems(storedCart)
+    } else {
+      // If no cart items, redirect back to menu
+      navigate({ to: '/menu' })
+      return
+    }
+
+    if (storedOrderType) {
+      setOrderType(storedOrderType)
+    }
+  }, [navigate])
 
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
     phone: '',
     address: '',
-    city: '',
-    postalCode: '',
     notes: '',
   })
+  // Fetch user profile if authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      getMyProfile()
+        .then((profile) => {
+          setUserProfile(profile)
+
+          setFormData({
+            fullName: profile.fullName || '',
+            email: profile.email || '',
+            phone: profile.phone || '',
+            address: profile.address || '',
+            notes: '',
+          })
+        })
+        .catch((err) => {
+          console.error('Failed to fetch profile:', err)
+        })
+    }
+  }, [isAuthenticated])
 
   const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const subtotal = mockCartItems.reduce(
+  const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   )
@@ -62,19 +111,65 @@ function CheckoutPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+
+    if (cartItems.length === 0) {
+      navigate({ to: '/menu' })
+      return
+    }
+
+    // For now, only authenticated users can create orders via memberCreate endpoint
+    if (!isAuthenticated) {
+      setError('Please log in to place an order. Guest checkout coming soon!')
+      return
+    }
+
     setIsProcessing(true)
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    try {
+      // Build order items from cart
+      const orderItems: CreateOrderItemRequest[] = cartItems.map((item) => ({
+        menuItemId: item.id,
+        quantity: item.quantity,
+      }))
 
-    // Navigate to order confirmation
-    navigate({
-      to: '/order-confirmation',
-      search: { orderId: `ORD-${Date.now()}` },
-    })
+      // Build the order request
+      const orderRequest: CreateMemberOrderRequest = {
+        orderType: orderType,
+        items: orderItems,
+        paymentMethod: 'CASH', // Currently only CASH is supported
+        notes: formData.notes || undefined,
+      }
+
+      // Add delivery address for delivery orders
+      if (orderType === 'DELIVERY' && formData.address) {
+        orderRequest.deliveryAddress = formData.address
+      }
+
+      // Call the API
+      const createdOrder = await createMemberOrder(orderRequest)
+
+      // Clear cart after successful order
+      clearCartStorage()
+
+      // Navigate to order confirmation with the actual order ID
+      navigate({
+        to: '/order-confirmation',
+        search: { orderId: String(createdOrder.id) },
+      })
+    } catch (err) {
+      console.error('Failed to create order:', err)
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to create order. Please try again.',
+      )
+      setIsProcessing(false)
+    }
   }
 
   const isDelivery = orderType === 'DELIVERY'
+  const isTakeaway = orderType === 'TAKEAWAY'
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,100 +204,140 @@ function CheckoutPage() {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Main Form */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Contact Information */}
+              {/* Contact Information & Delivery Address */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-lg">
-                    <User className="h-5 w-5 text-primary" />
-                    Contact Information
+                  <CardTitle className="grid grid-cols-2 gap-2 text-lg">
+                    <div className="flex items-center gap-2">
+                      <User className="h-5 w-5 text-primary" />
+                      Contact Information
+                    </div>
+                    {isDelivery && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        <span>Delivery Address</span>
+                      </div>
+                    )}
+                    {isTakeaway && (
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-primary" />
+                        <span>Pickup Time</span>
+                      </div>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name</Label>
-                      <Input
-                        id="fullName"
-                        name="fullName"
-                        placeholder="John Doe"
-                        value={formData.fullName}
-                        onChange={handleInputChange}
-                        required
-                      />
+                  <div className="grid lg:grid-cols-2 gap-6">
+                    {/* Left Column - Contact Information */}
+                    <div className="flex flex-col gap-4">
+                      {isAuthenticated ? (
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <p className="text-sm text-muted-foreground">
+                                Name
+                              </p>
+                              <p className="text-md text-foreground font-medium">
+                                {user?.fullName}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <p className="text-sm text-muted-foreground">
+                                Phone
+                              </p>
+                              <p className="text-md text-foreground font-medium">
+                                {userProfile?.phone}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <p className="text-sm text-muted-foreground">
+                                Email
+                              </p>
+                              <p className="text-md text-foreground font-medium">
+                                {user?.email}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="fullName">Full Name</Label>
+                            <Input
+                              id="fullName"
+                              name="fullName"
+                              placeholder="John Doe"
+                              value={formData.fullName}
+                              onChange={handleInputChange}
+                              disabled={isAuthenticated}
+                              required
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="phone">Phone</Label>
+                            <div className="relative">
+                              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="phone"
+                                name="phone"
+                                type="tel"
+                                placeholder="+61 400 000 000"
+                                className="pl-10"
+                                value={formData.phone}
+                                onChange={handleInputChange}
+                                required
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="email">Email</Label>
+                            <div className="relative">
+                              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                placeholder="john@example.com"
+                                className="pl-10"
+                                value={formData.email}
+                                onChange={handleInputChange}
+                                required
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="phone"
-                          name="phone"
-                          type="tel"
-                          placeholder="+61 400 000 000"
-                          className="pl-10"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          required
-                        />
+
+                    {/* Right Column - Delivery Address (only for delivery) */}
+                    {isDelivery && (
+                      <div className="flex flex-col gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="address">Address</Label>
+                          <Input
+                            id="address"
+                            name="address"
+                            placeholder="123 Main Street, Apt 4B"
+                            value={formData.address}
+                            onChange={handleInputChange}
+                            required={isDelivery}
+                          />
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Delivery Address - Only for delivery */}
-              {isDelivery && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <MapPin className="h-5 w-5 text-primary" />
-                      Delivery Address
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="address">Street Address</Label>
-                      <Input
-                        id="address"
-                        name="address"
-                        placeholder="123 Main Street, Apt 4B"
-                        value={formData.address}
-                        onChange={handleInputChange}
-                        required={isDelivery}
-                      />
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input
-                          id="city"
-                          name="city"
-                          placeholder="Melbourne"
-                          value={formData.city}
-                          onChange={handleInputChange}
-                          required={isDelivery}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="postalCode">Postal Code</Label>
-                        <Input
-                          id="postalCode"
-                          name="postalCode"
-                          placeholder="3000"
-                          value={formData.postalCode}
-                          onChange={handleInputChange}
-                          required={isDelivery}
-                        />
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
               {/* Special Instructions */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Pencil className="h-5 w-5 text-primary" />
                     Special Instructions
                   </CardTitle>
                 </CardHeader>
@@ -264,19 +399,25 @@ function CheckoutPage() {
                   <CardContent className="space-y-4">
                     {/* Items */}
                     <div className="space-y-3 max-h-64 overflow-y-auto">
-                      {mockCartItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex justify-between text-sm"
-                        >
-                          <span className="text-muted-foreground">
-                            {item.quantity}x {item.name}
-                          </span>
-                          <span className="text-foreground">
-                            ${(item.price * item.quantity).toFixed(2)}
-                          </span>
-                        </div>
-                      ))}
+                      {cartItems.length === 0 ? (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No items in cart
+                        </p>
+                      ) : (
+                        cartItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex justify-between text-sm"
+                          >
+                            <span className="text-muted-foreground">
+                              {item.quantity}x {item.name}
+                            </span>
+                            <span className="text-foreground">
+                              ${(item.price * item.quantity).toFixed(2)}
+                            </span>
+                          </div>
+                        ))
+                      )}
                     </div>
 
                     <div className="border-t border-border pt-4 space-y-2">
@@ -310,11 +451,18 @@ function CheckoutPage() {
                       </div>
                     </div>
 
+                    {error && (
+                      <div className="flex items-start gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                        <AlertCircle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                        <p className="text-sm text-destructive">{error}</p>
+                      </div>
+                    )}
+
                     <Button
                       type="submit"
                       className="w-full"
                       size="lg"
-                      disabled={isProcessing}
+                      disabled={isProcessing || cartItems.length === 0}
                     >
                       {isProcessing ? (
                         <span className="flex items-center gap-2">

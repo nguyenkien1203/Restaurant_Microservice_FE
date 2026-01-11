@@ -3,7 +3,11 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { CartSidebar } from '@/components/order/cart-sidebar'
+import {
+  CartSidebar,
+  type CartItem,
+  getCartFromStorage,
+} from '@/components/order/cart-sidebar'
 import { fetchMenuItems } from '@/lib/api/menu'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
 import { MENU_TAGS } from '@/lib/types/menu'
@@ -13,10 +17,6 @@ import { Plus, Minus, Loader2, Flame, Leaf, X, Clock, Zap } from 'lucide-react'
 export const Route = createFileRoute('/menu')({
   component: MenuPage,
 })
-
-interface CartItem extends NormalizedMenuItem {
-  quantity: number
-}
 
 // Define the logical meal order for categories
 // Lower number = higher priority (appears first)
@@ -39,7 +39,10 @@ const CATEGORY_ORDER: Record<string, number> = {
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState('all')
-  const [cart, setCart] = useState<CartItem[]>([])
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    // Load cart from localStorage on initial mount
+    return getCartFromStorage()
+  })
   const [selectedItem, setSelectedItem] = useState<NormalizedMenuItem | null>(
     null,
   )
