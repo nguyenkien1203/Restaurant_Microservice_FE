@@ -84,10 +84,13 @@ export function OrderStatusBadge({
 
   return (
     <Badge
+      variant="outline"
       className={cn(
         'font-medium border inline-flex items-center gap-1.5',
         config.className,
         sizeClasses,
+        // Remove hover effects - prevent background color change
+        'hover:!bg-[inherit]',
       )}
     >
       {showIcon && (

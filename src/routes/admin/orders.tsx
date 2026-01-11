@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Table,
@@ -9,8 +9,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useState, useMemo, useCallback } from 'react'
-import { getAdminOrders } from '@/lib/api/order'
-import type { OrderType } from '@/lib/types/order'
+import { getAdminOrders, updateOrderStatus } from '@/lib/api/order'
+import type { OrderType, OrderStatus } from '@/lib/types/order'
 import { cn } from '@/lib/utils'
 import {
   AdminPageHeader,
@@ -108,6 +108,7 @@ function useOrderSorting() {
 }
 
 function AdminOrders() {
+  const queryClient = useQueryClient()
   const filters = useOrderFilters()
   const sorting = useOrderSorting()
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
@@ -120,6 +121,39 @@ function AdminOrders() {
     queryKey: ['adminOrders'],
     queryFn: getAdminOrders,
   })
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({
+      orderId,
+      newStatus,
+      reason,
+    }: {
+      orderId: number
+      newStatus: OrderStatus
+      reason?: string
+    }) => updateOrderStatus(orderId, { newStatus, reason }),
+    onSuccess: (updatedOrder) => {
+      // Update the orders list
+      queryClient.setQueryData<Order[]>(['adminOrders'], (oldOrders) => {
+        if (!oldOrders) return [updatedOrder]
+        return oldOrders.map((order) =>
+          order.id === updatedOrder.id ? updatedOrder : order,
+        )
+      })
+      // Update selected order if it's the one being updated
+      if (selectedOrder?.id === updatedOrder.id) {
+        setSelectedOrder(updatedOrder)
+      }
+    },
+  })
+
+  const handleStatusUpdate = async (
+    orderId: number,
+    newStatus: OrderStatus,
+    reason?: string,
+  ) => {
+    await updateStatusMutation.mutateAsync({ orderId, newStatus, reason })
+  }
 
   const orderTypes = useMemo(() => {
     return Array.from(
@@ -249,15 +283,24 @@ function AdminOrders() {
   }, [filters])
 
   const totalOrders = orders.length
-  const pendingOrders = orders.filter(
-    (order) => order.status === 'PENDING',
-  ).length
-  const completedOrders = orders.filter(
-    (order) => order.status === 'COMPLETED',
-  ).length
-  const cancelledOrders = orders.filter(
-    (order) => order.status === 'CANCELLED',
-  ).length
+
+  const orderStatuses = [
+    'PENDING',
+    'CONFIRMED',
+    'PREPARING',
+    'READY',
+    'OUT_FOR_DELIVERY',
+    'DELIVERED',
+    'COMPLETED',
+    'CANCELLED',
+  ] as const
+  const orderStatusCounts = orderStatuses.reduce<Record<string, number>>(
+    (acc, status) => {
+      acc[status] = orders.filter((order) => order.status === status).length
+      return acc
+    },
+    {} as Record<string, number>,
+  )
 
   return (
     <div className="space-y-6">
@@ -284,15 +327,35 @@ function AdminOrders() {
                   <div className="flex items-center gap-4 mt-1 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <span className="h-2 w-2 rounded-full bg-yellow-500" />
-                      {pendingOrders} Pending
+                      {orderStatusCounts['PENDING']} Pending
+                    </span>
+                    {/* <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                      {orderStatusCounts['CONFIRMED']} Confirmed
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-orange-500" />
+                      {orderStatusCounts['PREPARING']} Preparing
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      {orderStatusCounts['READY']} Ready
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-purple-500" />
+                      {orderStatusCounts['OUT_FOR_DELIVERY']} Out for Delivery
                     </span>
                     <span className="flex items-center gap-1">
                       <span className="h-2 w-2 rounded-full bg-green-500" />
-                      {completedOrders} Completed
+                      {orderStatusCounts['DELIVERED']} Delivered
+                    </span> */}
+                    <span className="flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-green-500" />
+                      {orderStatusCounts['COMPLETED']} Completed
                     </span>
                     <span className="flex items-center gap-1">
                       <span className="h-2 w-2 rounded-full bg-red-500" />
-                      {cancelledOrders} Cancelled
+                      {orderStatusCounts['CANCELLED']} Cancelled
                     </span>
                   </div>
                 </div>
@@ -370,6 +433,8 @@ function AdminOrders() {
                         order={order}
                         isSelected={selectedOrder?.id === order.id}
                         onSelect={() => setSelectedOrder(order)}
+                        onStatusUpdate={handleStatusUpdate}
+                        isUpdatingStatus={updateStatusMutation.isPending}
                       />
                     ))}
                   </TableBody>
@@ -385,6 +450,8 @@ function AdminOrders() {
             <OrderDetailsCard
               order={selectedOrder}
               onClose={() => setSelectedOrder(null)}
+              onStatusUpdate={handleStatusUpdate}
+              isUpdatingStatus={updateStatusMutation.isPending}
             />
           </div>
         )}

@@ -21,6 +21,11 @@ export interface CreateMemberOrderRequest {
   notes?: string
 }
 
+export interface UpdateOrderStatusRequest {
+  newStatus: OrderStatus
+  reason?: string
+}
+
 // Response types
 export interface OrderItem {
   id: number

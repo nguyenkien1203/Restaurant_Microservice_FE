@@ -1,6 +1,10 @@
 import { API_ENDPOINTS } from '@/lib/config'
 import { triggerSessionExpired } from '@/lib/auth-context'
-import type { CreateMemberOrderRequest, Order } from '@/lib/types/order'
+import type {
+  CreateMemberOrderRequest,
+  Order,
+  UpdateOrderStatusRequest,
+} from '@/lib/types/order'
 
 /**
  * Create a new order for authenticated members
@@ -97,6 +101,36 @@ export async function getAdminOrders(): Promise<Order[]> {
     }
     const errorData = await response.json().catch(() => ({}))
     throw new Error(errorData.message || `Failed to fetch orders: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Update order status (admin only)
+ */
+export async function updateOrderStatus(
+  orderId: string | number,
+  statusData: UpdateOrderStatusRequest
+): Promise<Order> {
+  const response = await fetch(API_ENDPOINTS.order.updateStatus(orderId.toString()), {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(statusData),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      // triggerSessionExpired()
+      // throw new Error('Session expired')
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(
+      errorData.message || `Failed to update order status: ${response.status}`
+    )
   }
 
   return response.json()

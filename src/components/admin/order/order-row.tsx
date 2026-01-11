@@ -2,13 +2,19 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Package2, Handbag, Clock, User, UserCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Order, OrderType } from '@/lib/types/order'
-import { OrderStatusBadge } from '@/components/order/order-status-badge'
+import type { Order, OrderType, OrderStatus } from '@/lib/types/order'
+import { StatusUpdateDropdown } from './status-update-dropdown'
 
 interface OrderRowProps {
   order: Order
   isSelected: boolean
   onSelect: () => void
+  onStatusUpdate?: (
+    orderId: number,
+    newStatus: OrderStatus,
+    reason?: string,
+  ) => Promise<void>
+  isUpdatingStatus?: boolean
 }
 
 const orderTypeConfig: Record<
@@ -43,7 +49,13 @@ function formatDate(dateString?: string) {
   })
 }
 
-export function OrderRow({ order, isSelected, onSelect }: OrderRowProps) {
+export function OrderRow({
+  order,
+  isSelected,
+  onSelect,
+  onStatusUpdate,
+  isUpdatingStatus = false,
+}: OrderRowProps) {
   const typeConfig = orderTypeConfig[order.orderType]
   const isMemberOrder = !!order.userId
 
@@ -54,6 +66,17 @@ export function OrderRow({ order, isSelected, onSelect }: OrderRowProps) {
   const customerInfo = isMemberOrder
     ? order.userId
     : order.guestEmail || order.guestPhone || 'No contact info'
+  
+  const totalItems = order.orderItems.reduce((acc, item) => acc + item.quantity, 0)
+
+  const handleStatusUpdate = async (
+    newStatus: OrderStatus,
+    reason?: string,
+  ) => {
+    if (onStatusUpdate) {
+      await onStatusUpdate(order.id, newStatus, reason)
+    }
+  }
 
   return (
     <TableRow
@@ -102,8 +125,8 @@ export function OrderRow({ order, isSelected, onSelect }: OrderRowProps) {
       </TableCell>
       <TableCell>
         <span className="text-sm text-foreground">
-          {order.orderItems.length} item
-          {order.orderItems.length !== 1 ? 's' : ''}
+          {totalItems} item
+          {totalItems !== 1 ? 's' : ''}
         </span>
       </TableCell>
       <TableCell>
@@ -111,8 +134,13 @@ export function OrderRow({ order, isSelected, onSelect }: OrderRowProps) {
           ${order.totalAmount.toFixed(2)}
         </span>
       </TableCell>
-      <TableCell>
-        <OrderStatusBadge status={order.status} size="sm" />
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <StatusUpdateDropdown
+          currentStatus={order.status}
+          onStatusUpdate={handleStatusUpdate}
+          isUpdatingStatus={isUpdatingStatus}
+          size="sm"
+        />
       </TableCell>
       <TableCell>
         <Badge

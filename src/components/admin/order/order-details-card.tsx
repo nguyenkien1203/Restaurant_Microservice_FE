@@ -13,12 +13,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import type { Order, OrderType } from '@/lib/types/order'
-import { OrderStatusBadge } from '@/components/order/order-status-badge'
+import type { Order, OrderType, OrderStatus } from '@/lib/types/order'
+import { StatusUpdateDropdown } from './status-update-dropdown'
 
 interface OrderDetailsCardProps {
   order: Order
   onClose: () => void
+  onStatusUpdate?: (
+    orderId: number,
+    newStatus: OrderStatus,
+    reason?: string,
+  ) => Promise<void>
+  isUpdatingStatus?: boolean
 }
 
 const orderTypeConfig: Record<
@@ -57,7 +63,12 @@ function formatDate(dateString?: string) {
   })
 }
 
-export function OrderDetailsCard({ order, onClose }: OrderDetailsCardProps) {
+export function OrderDetailsCard({
+  order,
+  onClose,
+  onStatusUpdate,
+  isUpdatingStatus = false,
+}: OrderDetailsCardProps) {
   const typeConfig = orderTypeConfig[order.orderType]
   const TypeIcon = typeConfig?.icon || Package2
   const isMemberOrder = !!order.userId
@@ -74,11 +85,21 @@ export function OrderDetailsCard({ order, onClose }: OrderDetailsCardProps) {
     (sum, item) => sum + item.subtotal,
     0,
   )
+  const totalItems = order.orderItems.reduce((acc, item) => acc + item.quantity, 0)
+
+  const handleStatusUpdate = async (
+    newStatus: OrderStatus,
+    reason?: string,
+  ) => {
+    if (onStatusUpdate) {
+      await onStatusUpdate(order.id, newStatus, reason)
+    }
+  }
 
   return (
     <div className="h-full flex flex-col">
       <Card className="flex-1 flex flex-col overflow-hidden">
-        <CardHeader className="flex-shrink-0 border-b">
+        <CardHeader className="shrink-0 border-b">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div
@@ -111,7 +132,12 @@ export function OrderDetailsCard({ order, onClose }: OrderDetailsCardProps) {
             </Button>
           </div>
           <div className="flex items-center gap-2 mt-3">
-            <OrderStatusBadge status={order.status} size="sm" />
+            <StatusUpdateDropdown
+              currentStatus={order.status}
+              onStatusUpdate={handleStatusUpdate}
+              isUpdatingStatus={isUpdatingStatus}
+              size="sm"
+            />
             <Badge
               variant="outline"
               className={cn(
@@ -207,7 +233,7 @@ export function OrderDetailsCard({ order, onClose }: OrderDetailsCardProps) {
           <div className="space-y-2">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
               <Receipt className="h-4 w-4 text-primary" />
-              Order Items ({order.orderItems.length})
+              Order Items ({totalItems})
             </h3>
             <div className="space-y-2">
               {order.orderItems.map((item) => (
