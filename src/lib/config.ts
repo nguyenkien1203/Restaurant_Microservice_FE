@@ -27,10 +27,11 @@ export const API_ENDPOINTS = {
   order: {
     guestCreate: `${API_BASE_URL}/api/orders/guest`,
     memberCreate: `${API_BASE_URL}/api/orders`,
+    preOrder: (reservationId: string | number) => `${API_BASE_URL}/api/orders/pre-order/${reservationId}`,
     myOrders: `${API_BASE_URL}/api/orders/my-orders`,
     byId: (id: string) => `${API_BASE_URL}/api/orders/${id}`,
     admin: `${API_BASE_URL}/api/orders`,
     updateStatus: (id: string) => `${API_BASE_URL}/api/orders/${id}/status`,
   }
-  
+
 } as const

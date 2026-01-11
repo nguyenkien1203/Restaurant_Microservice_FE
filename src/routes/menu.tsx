@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useSearch } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -16,11 +16,31 @@ import {
   getSortedCategories,
 } from '@/components/menu'
 
+interface MenuSearchParams {
+  reservationId?: string
+  date?: string
+  time?: string
+  guests?: string
+  name?: string
+}
+
 export const Route = createFileRoute('/menu')({
   component: MenuPage,
+  validateSearch: (search: Record<string, unknown>): MenuSearchParams => {
+    return {
+      reservationId: search.reservationId as string | undefined,
+      date: search.date as string | undefined,
+      time: search.time as string | undefined,
+      guests: search.guests as string | undefined,
+      name: search.name as string | undefined,
+    }
+  },
 })
 
 export default function MenuPage() {
+  const search = useSearch({ from: '/menu' })
+  const reservationId = search.reservationId
+
   const [activeCategory, setActiveCategory] = useState('all')
   const [cart, setCart] = useState<CartItem[]>(() => {
     return getCartFromStorage()
@@ -124,6 +144,7 @@ export default function MenuPage() {
                 onUpdateQuantity={updateQuantity}
                 onRemoveItem={removeItem}
                 onUpdateNotes={updateNotes}
+                reservationId={reservationId}
               />
             </div>
           </div>

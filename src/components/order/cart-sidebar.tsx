@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import {
   Minus,
@@ -11,6 +11,7 @@ import {
   Package2,
   Edit2,
   X,
+  CalendarCheck,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -78,24 +79,32 @@ const orderTypeOptions: {
   value: OrderType
   label: string
   icon: React.ReactNode
+  requiresReservation?: boolean
 }[] = [
-  {
-    value: 'TAKEAWAY',
-    label: 'Takeaway',
-    icon: <Handbag className="h-4 w-4" />,
-  },
-  {
-    value: 'DELIVERY',
-    label: 'Delivery',
-    icon: <Package2 className="h-4 w-4" />,
-  },
-]
+    {
+      value: 'PRE_ORDER',
+      label: 'Pre-order',
+      icon: <CalendarCheck className="h-4 w-4" />,
+      requiresReservation: true,
+    },
+    {
+      value: 'TAKEAWAY',
+      label: 'Takeaway',
+      icon: <Handbag className="h-4 w-4" />,
+    },
+    {
+      value: 'DELIVERY',
+      label: 'Delivery',
+      icon: <Package2 className="h-4 w-4" />,
+    },
+  ]
 
 interface CartSidebarProps {
   items: CartItem[]
   onUpdateQuantity: (id: string, quantity: number) => void
   onRemoveItem: (id: string) => void
   onUpdateNotes?: (id: string, notes: string) => void
+  reservationId?: string
 }
 
 export function CartSidebar({
@@ -103,13 +112,26 @@ export function CartSidebar({
   onUpdateQuantity,
   onRemoveItem,
   onUpdateNotes,
+  reservationId,
 }: CartSidebarProps) {
   const navigate = useNavigate()
   const [orderType, setOrderType] = useState<OrderType>(() => {
+    // Default to PRE_ORDER if reservationId is present
+    if (reservationId) return 'PRE_ORDER'
     return getOrderTypeFromStorage() || 'TAKEAWAY'
   })
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null)
   const [notesValue, setNotesValue] = useState('')
+
+  // Filter order type options based on whether we have a reservationId
+  const availableOrderTypes = useMemo(() => {
+    return orderTypeOptions.filter(option => {
+      if (option.requiresReservation) {
+        return !!reservationId
+      }
+      return true
+    })
+  }, [reservationId])
 
   // Save cart and orderType to localStorage whenever they change
   useEffect(() => {
@@ -136,15 +158,14 @@ export function CartSidebar({
             How would you like your order?
           </p>
           <div className="flex flex-col gap-2">
-            {orderTypeOptions.map((option) => (
+            {availableOrderTypes.map((option) => (
               <button
                 key={option.value}
                 onClick={() => setOrderType(option.value)}
-                className={`flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm transition-colors ${
-                  orderType === option.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                }`}
+                className={`flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm transition-colors ${orderType === option.value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }`}
               >
                 {option.icon}
                 <span>{option.label}</span>
@@ -323,8 +344,11 @@ export function CartSidebar({
                   saveCartToStorage(items)
                   saveOrderTypeToStorage(orderType)
 
-                  if (orderType === 'DELIVERY' || orderType === 'TAKEAWAY') {
-                    navigate({ to: '/checkout' })
+                  if (orderType === 'DELIVERY' || orderType === 'TAKEAWAY' || orderType === 'PRE_ORDER') {
+                    navigate({
+                      to: '/checkout',
+                      search: reservationId ? { reservationId } : undefined,
+                    })
                   } else {
                     navigate({
                       to: '/order-confirmation',

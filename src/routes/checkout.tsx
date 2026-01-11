@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -18,6 +18,7 @@ import {
   Clock,
   Pencil,
   AlertCircle,
+  CalendarCheck,
 } from 'lucide-react'
 import type { OrderType, CartItem } from '@/components/order/cart-sidebar'
 import {
@@ -28,18 +29,31 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import type { UserProfile } from '@/lib/types/profile'
 import { getMyProfile } from '@/lib/api/profile'
-import { createMemberOrder } from '@/lib/api/order'
+import { createMemberOrder, createPreOrder } from '@/lib/api/order'
 import type {
   CreateMemberOrderRequest,
   CreateOrderItemRequest,
+  CreatePreOrderRequest,
 } from '@/lib/types/order'
+
+interface CheckoutSearchParams {
+  reservationId?: string
+}
 
 export const Route = createFileRoute('/checkout')({
   component: CheckoutPage,
+  validateSearch: (search: Record<string, unknown>): CheckoutSearchParams => {
+    return {
+      reservationId: search.reservationId as string | undefined,
+    }
+  },
 })
 
 function CheckoutPage() {
   const navigate = useNavigate()
+  const search = useSearch({ from: '/checkout' })
+  const reservationId = search.reservationId
+
   const { isAuthenticated, user } = useAuth()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
@@ -134,21 +148,34 @@ function CheckoutPage() {
         notes: item.notes || undefined,
       }))
 
-      // Build the order request
-      const orderRequest: CreateMemberOrderRequest = {
-        orderType: orderType,
-        items: orderItems,
-        paymentMethod: 'CASH', // Currently only CASH is supported
-        notes: formData.notes || undefined,
-      }
+      let createdOrder
 
-      // Add delivery address for delivery orders
-      if (orderType === 'DELIVERY' && formData.address) {
-        orderRequest.deliveryAddress = formData.address
-      }
+      // Check if this is a pre-order (has reservationId and is PRE_ORDER type)
+      if (orderType === 'PRE_ORDER' && reservationId) {
+        // Build pre-order request
+        const preOrderRequest: CreatePreOrderRequest = {
+          items: orderItems,
+          paymentMethod: 'CASH',
+          notes: formData.notes || undefined,
+        }
 
-      // Call the API
-      const createdOrder = await createMemberOrder(orderRequest)
+        createdOrder = await createPreOrder(reservationId, preOrderRequest)
+      } else {
+        // Build the regular order request
+        const orderRequest: CreateMemberOrderRequest = {
+          orderType: orderType,
+          items: orderItems,
+          paymentMethod: 'CASH', // Currently only CASH is supported
+          notes: formData.notes || undefined,
+        }
+
+        // Add delivery address for delivery orders
+        if (orderType === 'DELIVERY' && formData.address) {
+          orderRequest.deliveryAddress = formData.address
+        }
+
+        createdOrder = await createMemberOrder(orderRequest)
+      }
 
       // Clear cart after successful order
       clearCartStorage()
@@ -171,6 +198,19 @@ function CheckoutPage() {
 
   const isDelivery = orderType === 'DELIVERY'
   const isTakeaway = orderType === 'TAKEAWAY'
+  const isPreOrder = orderType === 'PRE_ORDER'
+
+  const getOrderTypeLabel = () => {
+    if (isPreOrder) return 'Pre-order for Reservation'
+    if (isDelivery) return 'Delivery Order'
+    return 'Takeaway Order'
+  }
+
+  const getOrderTypeIcon = () => {
+    if (isPreOrder) return <CalendarCheck className="h-8 w-8 text-primary" />
+    if (isDelivery) return <Package2 className="h-8 w-8 text-primary" />
+    return <Handbag className="h-8 w-8 text-primary" />
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -185,15 +225,11 @@ function CheckoutPage() {
             Back to Menu
           </button>
           <div className="flex items-center gap-3">
-            {isDelivery ? (
-              <Package2 className="h-8 w-8 text-primary" />
-            ) : (
-              <Handbag className="h-8 w-8 text-primary" />
-            )}
+            {getOrderTypeIcon()}
             <div>
               <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
               <p className="text-muted-foreground">
-                {isDelivery ? 'Delivery Order' : 'Takeaway Order'}
+                {getOrderTypeLabel()}
               </p>
             </div>
           </div>
@@ -373,7 +409,7 @@ function CheckoutPage() {
                       </div>
                       <div>
                         <p className="font-medium text-foreground">
-                          Pay on {isDelivery ? 'Delivery' : 'Pickup'}
+                          {isPreOrder ? 'Pay at Restaurant' : isDelivery ? 'Pay on Delivery' : 'Pay on Pickup'}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Cash or card accepted
@@ -383,8 +419,10 @@ function CheckoutPage() {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mt-3">
-                    Online payment coming soon. For now, pay when you receive
-                    your order.
+                    {isPreOrder
+                      ? 'Your pre-order will be ready when you arrive for your reservation.'
+                      : 'Online payment coming soon. For now, pay when you receive your order.'
+                    }
                   </p>
                 </CardContent>
               </Card>

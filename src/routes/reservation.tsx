@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Calendar } from '@/components/reservations/calendar'
-import { TimeSlots } from '@/components/reservations/time-slots'
+import { TimeSlots, type TimeSlotData } from '@/components/reservations/time-slots'
 import { GuestSelector } from '@/components/reservations/guest-selector'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,6 +18,7 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import { getMyProfile } from '@/lib/api/profile'
 import type { UserProfile } from '@/lib/types/profile'
+import { checkAvailability, createReservation, formatTime24to12, formatTime12to24 } from '@/lib/api/reservation'
 
 export const Route = createFileRoute('/reservation')({
   component: ReservationPage,
@@ -33,6 +34,8 @@ function ReservationPage() {
   const [specialRequests, setSpecialRequests] = useState('')
   const SPECIAL_REQUESTS_LIMIT = 200
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [timeSlots, setTimeSlots] = useState<TimeSlotData[]>([])
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false)
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -64,7 +67,42 @@ function ReservationPage() {
     }
   }, [isAuthenticated])
 
-  const [reservationId, setReservationId] = useState<string | null>(null)
+  // Fetch availability when date or guests change
+  const fetchAvailability = useCallback(async (date: Date, partySize: number) => {
+    setIsLoadingSlots(true)
+    setSelectedTime(null) // Reset selected time when fetching new availability
+
+    try {
+      // Format date as YYYY-MM-DD
+      const dateStr = date.toISOString().split('T')[0]
+      const response = await checkAvailability(dateStr, partySize)
+
+      // Convert backend response to TimeSlotData format
+      const slots: TimeSlotData[] = response.availableSlots.map((slot) => ({
+        time: formatTime24to12(slot.time),
+        available: slot.tablesAvailable > 0,
+        tablesAvailable: slot.tablesAvailable,
+      }))
+
+      setTimeSlots(slots)
+    } catch (error) {
+      console.error('Failed to fetch availability:', error)
+      setTimeSlots([]) // Clear slots on error
+    } finally {
+      setIsLoadingSlots(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedDate) {
+      fetchAvailability(selectedDate, guests)
+    }
+  }, [selectedDate, guests, fetchAvailability])
+
+  const [reservationId, setReservationId] = useState<number | null>(null)
+  const [confirmationCode, setConfirmationCode] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   const formatDate = (date: Date | null) => {
     if (!date) return ''
@@ -76,14 +114,40 @@ function ReservationPage() {
     })
   }
 
-  const handleConfirmReservation = () => {
-    const id = `RES-${Date.now().toString(36).toUpperCase()}`
-    setReservationId(id)
-    // Store special requests in notes for logged-in users
-    if (isAuthenticated) {
-      setFormData((prev) => ({ ...prev, notes: specialRequests }))
+  const handleConfirmReservation = async () => {
+    if (!selectedDate || !selectedTime) return
+
+    setIsSubmitting(true)
+    setSubmitError(null)
+
+    try {
+      // Format date as YYYY-MM-DD
+      const reservationDate = selectedDate.toISOString().split('T')[0]
+      // Convert time from 12-hour to 24-hour format (HH:mm)
+      const time24 = formatTime12to24(selectedTime)
+      const startTime = time24.substring(0, 5) // Remove seconds, keep HH:mm
+
+      const response = await createReservation({
+        reservationDate,
+        startTime,
+        partySize: guests,
+        specialRequests: specialRequests || undefined,
+      })
+
+      setReservationId(response.id)
+      setConfirmationCode(response.confirmationCode)
+
+      // Store special requests in notes for logged-in users
+      if (isAuthenticated) {
+        setFormData((prev) => ({ ...prev, notes: specialRequests }))
+      }
+      setStep(3)
+    } catch (error) {
+      console.error('Failed to create reservation:', error)
+      setSubmitError(error instanceof Error ? error.message : 'Failed to create reservation')
+    } finally {
+      setIsSubmitting(false)
     }
-    setStep(3)
   }
 
   const handlePreOrder = () => {
@@ -91,7 +155,7 @@ function ReservationPage() {
       ? userProfile?.fullName || user?.fullName || ''
       : `${formData.firstName} ${formData.lastName}`
     const params = new URLSearchParams({
-      reservationId: reservationId || '',
+      reservationId: reservationId?.toString() || '',
       date: selectedDate?.toISOString() || '',
       time: selectedTime || '',
       guests: guests.toString(),
@@ -137,6 +201,9 @@ function ReservationPage() {
                   <TimeSlots
                     selectedTime={selectedTime}
                     onTimeSelect={setSelectedTime}
+                    slots={timeSlots.length > 0 ? timeSlots : undefined}
+                    isLoading={isLoadingSlots}
+                    hasDateSelected={!!selectedDate}
                   />
 
                   {/* Special Requests - for all users */}
@@ -252,11 +319,18 @@ function ReservationPage() {
                     </CardContent>
                   </Card>
 
+                  {submitError && (
+                    <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                      {submitError}
+                    </div>
+                  )}
+
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
                       onClick={() => setStep(1)}
                       className="flex-1"
+                      disabled={isSubmitting}
                     >
                       Back
                     </Button>
@@ -264,12 +338,13 @@ function ReservationPage() {
                       className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90"
                       onClick={handleConfirmReservation}
                       disabled={
+                        isSubmitting ||
                         !formData.firstName ||
                         !formData.email ||
                         !formData.phone
                       }
                     >
-                      Confirm Reservation
+                      {isSubmitting ? 'Creating...' : 'Confirm Reservation'}
                     </Button>
                   </div>
                 </div>
@@ -293,14 +368,26 @@ function ReservationPage() {
                         </div>
                       </div>
 
-                      {/* Reservation ID */}
-                      <div className="bg-white border-2 border-dashed border-green-300 rounded-lg p-4 mb-4 text-center">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                          Your Reservation ID
-                        </p>
-                        <p className="text-2xl font-bold text-primary tracking-wider">
-                          {reservationId}
-                        </p>
+                      {/* Reservation ID and Confirmation Code */}
+                      <div className="bg-white border-2 border-dashed border-green-300 rounded-lg p-4 mb-4">
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                              Reservation ID
+                            </p>
+                            <p className="text-2xl font-bold text-primary">
+                              #{reservationId}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                              Confirmation Code
+                            </p>
+                            <p className="text-lg font-bold text-primary tracking-wider">
+                              {confirmationCode}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -485,14 +572,21 @@ function ReservationPage() {
                         )}
                       </div>
 
+                      {/* Error display for logged-in users */}
+                      {isAuthenticated && submitError && step === 1 && (
+                        <div className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-3">
+                          {submitError}
+                        </div>
+                      )}
+
                       {/* Confirm Button for logged-in users */}
                       {isAuthenticated && step === 1 && (
                         <Button
                           className="w-full mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
-                          disabled={!selectedDate || !selectedTime}
+                          disabled={isSubmitting || !selectedDate || !selectedTime}
                           onClick={handleConfirmReservation}
                         >
-                          Confirm Reservation
+                          {isSubmitting ? 'Creating...' : 'Confirm Reservation'}
                         </Button>
                       )}
                     </div>

@@ -19,6 +19,13 @@ export interface CreateMemberOrderRequest {
   paymentMethod: PaymentMethod
   deliveryAddress?: string
   notes?: string
+  reservationId?: number
+}
+
+export interface CreatePreOrderRequest {
+  items: CreateOrderItemRequest[]
+  paymentMethod: PaymentMethod
+  notes?: string
 }
 
 export interface UpdateOrderStatusRequest {

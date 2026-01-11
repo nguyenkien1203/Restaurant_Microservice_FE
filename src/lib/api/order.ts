@@ -2,6 +2,7 @@ import { API_ENDPOINTS } from '@/lib/config'
 import { triggerSessionExpired } from '@/lib/auth-context'
 import type {
   CreateMemberOrderRequest,
+  CreatePreOrderRequest,
   Order,
   UpdateOrderStatusRequest,
 } from '@/lib/types/order'
@@ -29,6 +30,35 @@ export async function createMemberOrder(
     }
     const errorData = await response.json().catch(() => ({}))
     throw new Error(errorData.message || `Failed to create order: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Create a pre-order linked to a reservation
+ * Requires authentication (cookies are sent automatically)
+ */
+export async function createPreOrder(
+  reservationId: string | number,
+  orderData: CreatePreOrderRequest
+): Promise<Order> {
+  const response = await fetch(API_ENDPOINTS.order.preOrder(reservationId), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(orderData),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      triggerSessionExpired()
+      throw new Error('Session expired')
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || `Failed to create pre-order: ${response.status}`)
   }
 
   return response.json()
