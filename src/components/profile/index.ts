@@ -1,0 +1,6 @@
+export { DashboardTab } from './dashboard-tab'
+export { OrderHistoryTab } from './order-history-tab'
+export { ReservationsTab } from './reservations-tab'
+export { ProfileSettingsTab } from './profile-settings-tab'
+export { AddressesTab } from './addresses-tab'
+export { PaymentMethodsTab } from './payment-methods-tab'
