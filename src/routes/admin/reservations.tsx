@@ -375,7 +375,13 @@ function AdminReservations() {
                         key={reservation.id}
                         reservation={reservation}
                         isSelected={selectedReservation?.id === reservation.id}
-                        onSelect={() => setSelectedReservation(reservation)}
+                        onSelect={() =>
+                          setSelectedReservation(
+                            selectedReservation?.id === reservation.id
+                              ? null
+                              : reservation,
+                          )
+                        }
                         onStatusUpdate={handleStatusUpdate}
                         isUpdatingStatus={updateStatusMutation.isPending}
                       />
