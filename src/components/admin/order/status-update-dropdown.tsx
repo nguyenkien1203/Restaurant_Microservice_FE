@@ -1,20 +1,6 @@
-import { useState, useRef, useEffect } from 'react'
-import {
-  ChevronDown,
-  Check,
-  Loader2,
-} from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import {
-  Dialog,
-  DialogHeader,
-  DialogTitle,
-  DialogContent,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { OrderStatusBadge } from '@/components/order/order-status-badge'
+import { Loader2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import type { OrderStatus } from '@/lib/types/order'
 
@@ -28,29 +14,92 @@ interface StatusUpdateDropdownProps {
   size?: 'sm' | 'md'
 }
 
-const statusOptions: Array<{ value: OrderStatus; label: string }> = [
-  { value: 'PENDING', label: 'Pending' },
-  { value: 'CONFIRMED', label: 'Confirmed' },
-  { value: 'PREPARING', label: 'Preparing' },
-  { value: 'READY', label: 'Ready' },
-  { value: 'OUT_FOR_DELIVERY', label: 'Out for Delivery' },
-  { value: 'DELIVERED', label: 'Delivered' },
-  { value: 'COMPLETED', label: 'Completed' },
-  { value: 'CANCELLED', label: 'Cancelled' },
+const statusConfig: Record<
+  OrderStatus,
+  { label: string; color: string; bgColor: string }
+> = {
+  PENDING: {
+    label: 'Pending',
+    color: 'text-yellow-700',
+    bgColor: 'bg-yellow-100 hover:bg-yellow-200',
+  },
+  CONFIRMED: {
+    label: 'Confirmed',
+    color: 'text-green-700',
+    bgColor: 'bg-green-100 hover:bg-green-200',
+  },
+  PREPARING: {
+    label: 'Preparing',
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-100 hover:bg-orange-200',
+  },
+  READY: {
+    label: 'Ready',
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-100 hover:bg-blue-200',
+  },
+  OUT_FOR_DELIVERY: {
+    label: 'Out for Delivery',
+    color: 'text-purple-700',
+    bgColor: 'bg-purple-100 hover:bg-purple-200',
+  },
+  DELIVERED: {
+    label: 'Delivered',
+    color: 'text-emerald-700',
+    bgColor: 'bg-emerald-100 hover:bg-emerald-200',
+  },
+  COMPLETED: {
+    label: 'Completed',
+    color: 'text-teal-700',
+    bgColor: 'bg-teal-100 hover:bg-teal-200',
+  },
+  CANCELLED: {
+    label: 'Cancelled',
+    color: 'text-red-700',
+    bgColor: 'bg-red-100 hover:bg-red-200',
+  },
+}
+
+const allStatuses: OrderStatus[] = [
+  'PENDING',
+  'CONFIRMED',
+  'PREPARING',
+  'READY',
+  'OUT_FOR_DELIVERY',
+  'DELIVERED',
+  'COMPLETED',
+  'CANCELLED',
 ]
 
-const getDefaultReason = (status: OrderStatus): string => {
-  const reasons: Record<OrderStatus, string> = {
-    PENDING: 'Order set to pending',
-    CONFIRMED: 'Order confirmed by admin',
-    PREPARING: 'Order is being prepared',
-    READY: 'Order is ready for pickup/delivery',
-    OUT_FOR_DELIVERY: 'Order is out for delivery',
-    DELIVERED: 'Order has been delivered',
-    COMPLETED: 'Order completed',
-    CANCELLED: 'Order cancelled by admin',
+/**
+ * Get valid next statuses based on current status
+ * Based on backend validation logic:
+ * - PENDING -> CONFIRMED, CANCELLED
+ * - CONFIRMED -> PREPARING, CANCELLED
+ * - PREPARING -> READY, CANCELLED
+ * - READY -> OUT_FOR_DELIVERY, COMPLETED
+ * - OUT_FOR_DELIVERY -> DELIVERED
+ * - DELIVERED, COMPLETED, CANCELLED -> no transitions (terminal states)
+ */
+function getValidNextStatuses(currentStatus: OrderStatus): OrderStatus[] {
+  switch (currentStatus) {
+    case 'PENDING':
+      return ['CONFIRMED', 'CANCELLED']
+    case 'CONFIRMED':
+      return ['PREPARING', 'CANCELLED']
+    case 'PREPARING':
+      return ['READY', 'CANCELLED']
+    case 'READY':
+      return ['OUT_FOR_DELIVERY', 'COMPLETED']
+    case 'OUT_FOR_DELIVERY':
+      return ['DELIVERED']
+    case 'DELIVERED':
+    case 'COMPLETED':
+    case 'CANCELLED':
+      return [] // Terminal states - no transitions allowed
+    default:
+      return []
   }
-  return reasons[status] || 'Status updated by admin'
 }
 
 export function StatusUpdateDropdown({
@@ -59,169 +108,123 @@ export function StatusUpdateDropdown({
   isUpdatingStatus = false,
   size = 'sm',
 }: StatusUpdateDropdownProps) {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false)
-  const [selectedStatus, setSelectedStatus] = useState<OrderStatus | null>(null)
-  const [reason, setReason] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [openUpward, setOpenUpward] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const config = statusConfig[currentStatus]
+  const validNextStatuses = getValidNextStatuses(currentStatus)
 
-  // Close dropdown when clicking outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setIsDropdownOpen(false)
-      }
-    }
-    if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isDropdownOpen])
+    if (isOpen && buttonRef.current) {
+      const buttonRect = buttonRef.current.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      const spaceBelow = viewportHeight - buttonRect.bottom
+      const spaceAbove = buttonRect.top
+      const dropdownHeight = 300 // Approximate height of dropdown
 
-  const handleStatusSelect = (status: OrderStatus) => {
-    if (status === currentStatus) {
-      setIsDropdownOpen(false)
+      // Open upward if there's not enough space below but enough space above
+      setOpenUpward(spaceBelow < dropdownHeight && spaceAbove > spaceBelow)
+    }
+  }, [isOpen])
+
+  const handleStatusClick = async (newStatus: OrderStatus) => {
+    if (newStatus === currentStatus) {
+      setIsOpen(false)
       return
     }
-    setSelectedStatus(status)
-    setReason(getDefaultReason(status))
-    setIsDropdownOpen(false)
-    setIsConfirmModalOpen(true)
-  }
-
-  const handleConfirmStatusUpdate = async () => {
-    if (selectedStatus && onStatusUpdate) {
-      await onStatusUpdate(selectedStatus, reason || undefined)
-      setIsConfirmModalOpen(false)
-      setSelectedStatus(null)
-      setReason('')
+    // Don't allow invalid transitions
+    if (!validNextStatuses.includes(newStatus)) {
+      return
     }
-  }
-
-  const handleCancelStatusUpdate = () => {
-    setIsConfirmModalOpen(false)
-    setSelectedStatus(null)
-    setReason('')
+    if (onStatusUpdate) {
+      await onStatusUpdate(newStatus)
+    }
+    setIsOpen(false)
   }
 
   if (!onStatusUpdate) {
-    return <OrderStatusBadge status={currentStatus} size={size} />
+    return (
+      <span
+        className={cn(
+          'text-xs font-medium px-2 py-0.5 rounded',
+          config.bgColor,
+          config.color,
+        )}
+      >
+        {config.label}
+      </span>
+    )
   }
 
   return (
-    <>
       <div className="relative" ref={dropdownRef}>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setIsDropdownOpen(!isDropdownOpen)
-          }}
+      <Button
+        ref={buttonRef}
+        variant="ghost"
+        size="sm"
+        onClick={() => setIsOpen(!isOpen)}
           disabled={isUpdatingStatus}
-          className="flex items-center gap-1.5"
-        >
-          <OrderStatusBadge status={currentStatus} size={size} />
-          <ChevronDown
-            className={cn(
-              'h-3 w-3 text-muted-foreground transition-transform',
-              isDropdownOpen && 'rotate-180',
-              isUpdatingStatus && 'opacity-50',
-            )}
+        className={cn(
+          'text-xs px-2 py-1 h-auto',
+          config.bgColor,
+          config.color,
+        )}
+      >
+        {isUpdatingStatus ? (
+          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+        ) : null}
+        {config.label}
+      </Button>
+
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            onClick={() => setIsOpen(false)}
           />
-        </button>
-        {isDropdownOpen && (
-          <div className="absolute top-full left-0 mt-2 min-w-[200px] bg-card border border-border rounded-lg shadow-lg z-50 py-2">
-            {statusOptions.map((option) => (
+          <div
+            className={cn(
+              'absolute right-0 z-50 bg-popover border border-border rounded-md shadow-lg min-w-[160px]',
+              openUpward ? 'bottom-full mb-1' : 'top-full mt-1',
+            )}
+          >
+            {allStatuses.map((status) => {
+              const statusConf = statusConfig[status]
+              const isValid =
+                validNextStatuses.includes(status) || status === currentStatus
+              const isDisabled = !isValid
+
+              return (
               <button
-                key={option.value}
-                onClick={(e) => {
-                  e.stopPropagation()
-                  handleStatusSelect(option.value)
-                }}
-                disabled={option.value === currentStatus}
-                className={cn(
-                  'w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left transition-colors',
-                  option.value === currentStatus && 'opacity-50 cursor-not-allowed',
-                )}
-              >
-                {option.value === currentStatus && (
-                  <Check className="h-4 w-4 text-primary" />
-                )}
-                <span
+                  key={status}
+                  onClick={() => handleStatusClick(status)}
+                  disabled={isDisabled}
                   className={cn(
-                    option.value === currentStatus && 'font-medium',
+                    'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
+                    status === currentStatus && 'bg-accent',
+                    isDisabled
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:bg-accent cursor-pointer',
                   )}
                 >
-                  {option.label}
-                </span>
+                  <span
+                    className={cn(
+                      'h-2 w-2 rounded-full',
+                      status === currentStatus
+                        ? statusConf.bgColor.split(' ')[0]
+                        : isDisabled
+                          ? 'bg-transparent border border-muted-foreground/30'
+                          : 'bg-transparent border border-border',
+                    )}
+                  />
+                  {statusConf.label}
               </button>
-            ))}
+              )
+            })}
           </div>
+        </>
         )}
       </div>
-
-      {/* Status Update Confirmation Modal */}
-      <Dialog
-        open={isConfirmModalOpen}
-        onClose={handleCancelStatusUpdate}
-        className="max-w-md"
-      >
-        <DialogHeader onClose={handleCancelStatusUpdate}>
-          <DialogTitle>Confirm Status Update</DialogTitle>
-        </DialogHeader>
-        <DialogContent>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-2">
-                Update order status from{' '}
-                <span className="font-medium text-foreground">
-                  {currentStatus}
-                </span>{' '}
-                to{' '}
-                <span className="font-medium text-foreground">
-                  {selectedStatus}
-                </span>
-                ?
-              </p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-reason">Reason</Label>
-              <Textarea
-                id="confirm-reason"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-                disabled={isUpdatingStatus}
-                rows={3}
-                placeholder="Enter reason for status change..."
-              />
-            </div>
-          </div>
-        </DialogContent>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleCancelStatusUpdate}
-            disabled={isUpdatingStatus}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleConfirmStatusUpdate}
-            disabled={isUpdatingStatus || !selectedStatus}
-          >
-            {isUpdatingStatus ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              'Confirm Update'
-            )}
-          </Button>
-        </DialogFooter>
-      </Dialog>
-    </>
   )
 }

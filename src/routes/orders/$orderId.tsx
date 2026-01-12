@@ -5,6 +5,7 @@ import {
   Package2,
   Handbag,
   Clock,
+  UtensilsCrossed,
   MapPin,
   CreditCard,
   Receipt,
@@ -45,6 +46,12 @@ const orderTypeConfig: Record<
     label: 'Pre-Order',
     color: 'text-purple-600',
     bgColor: 'bg-purple-100',
+  },
+  DINE_IN: {
+    icon: UtensilsCrossed,
+    label: 'Dine In',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
   },
 }
 

@@ -1,6 +1,6 @@
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { Package2, Handbag, Clock } from 'lucide-react'
+import { Package2, Handbag, Clock, UtensilsCrossed } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Order, OrderType, OrderStatus } from '@/lib/types/order'
 import { StatusUpdateDropdown } from './status-update-dropdown'
@@ -35,6 +35,11 @@ const orderTypeConfig: Record<
     icon: Clock,
     label: 'Pre-Order',
     color: 'text-purple-600 bg-purple-100',
+  },
+  DINE_IN: {
+    icon: UtensilsCrossed,
+    label: 'Dine In',
+    color: 'text-blue-600 bg-blue-100',
   },
 }
 
@@ -105,7 +110,7 @@ export function OrderRow({
         <div className="flex items-center gap-3">
           <span
             className={cn(
-              'text-xs px-2 py-0.5 rounded',
+              'text-xs font-medium px-2 py-0.5 rounded',
               typeConfig?.color || 'text-gray-600 bg-gray-100',
             )}
           >
@@ -132,9 +137,7 @@ export function OrderRow({
         </span>
       </TableCell>
       <TableCell>
-        <span className="text-foreground">
-          ${order.totalAmount.toFixed(2)}
-        </span>
+        <span className="text-foreground">${order.totalAmount.toFixed(2)}</span>
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()}>
         <StatusUpdateDropdown

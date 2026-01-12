@@ -57,6 +57,13 @@ const orderTypeConfig: Record<
     color: 'text-purple-500',
     bgColor: 'bg-purple-500/10',
   },
+  DINE_IN: {
+    icon: UtensilsCrossed,
+    title: 'Dine In',
+    description: 'Order for dine-in service',
+    color: 'text-blue-500',
+    bgColor: 'bg-blue-500/10',
+  },
 }
 
 function OrderConfirmationPage() {

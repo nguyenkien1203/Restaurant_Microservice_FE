@@ -96,7 +96,7 @@ export function ReservationDetailsCard({
     <Card className="sticky top-4 overflow-y-auto max-h-[calc(100vh-12rem)]">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="flex items-center gap-4 text-lg">
-          Reservation Details
+          Reservation #{reservation.id}
           <div className="font-normal">
           <ReservationStatusDropdown
             currentStatus={status}

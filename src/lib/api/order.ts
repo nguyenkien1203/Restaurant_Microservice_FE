@@ -3,6 +3,7 @@ import { triggerSessionExpired } from '@/lib/auth-context'
 import type {
   CreateMemberOrderRequest,
   CreatePreOrderRequest,
+  CreateDineInOrderRequest,
   Order,
   UpdateOrderStatusRequest,
 } from '@/lib/types/order'
@@ -160,6 +161,35 @@ export async function updateOrderStatus(
     const errorData = await response.json().catch(() => ({}))
     throw new Error(
       errorData.message || `Failed to update order status: ${response.status}`
+    )
+  }
+
+  return response.json()
+}
+
+/**
+ * Create a dine-in order (admin only)
+ */
+export async function createDineInOrder(
+  orderData: CreateDineInOrderRequest
+): Promise<Order> {
+  const response = await fetch(API_ENDPOINTS.order.adminDineIn, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+    body: JSON.stringify(orderData),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      triggerSessionExpired()
+      throw new Error('Session expired')
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(
+      errorData.message || `Failed to create dine-in order: ${response.status}`
     )
   }
 
