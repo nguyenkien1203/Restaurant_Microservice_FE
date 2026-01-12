@@ -1,3 +1,6 @@
+import { API_ENDPOINTS } from '../config'
+import { triggerSessionExpired } from '../auth-context'
+
 const API_BASE_URL = 'https://au1gqu8qxf.execute-api.us-east-1.amazonaws.com/api'
 
 export interface Table {
@@ -195,6 +198,41 @@ export async function getAllReservations(): Promise<ReservationResponse[]> {
 
     if (!response.ok) {
         throw new Error(`Failed to fetch reservations: ${response.statusText}`)
+    }
+
+    return response.json()
+}
+
+export interface UpdateReservationStatusRequest {
+    newStatus: string
+    reason?: string
+}
+
+/**
+ * Update reservation status (admin only)
+ */
+export async function updateReservationStatus(
+    reservationId: string | number,
+    statusData: UpdateReservationStatusRequest
+): Promise<ReservationResponse> {
+    const response = await fetch(API_ENDPOINTS.reservation.updateStatus(reservationId), {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(statusData),
+    })
+
+    if (!response.ok) {
+        if (response.status === 401) {
+            triggerSessionExpired()
+            throw new Error('Session expired')
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(
+            errorData.message || `Failed to update reservation status: ${response.status}`
+        )
     }
 
     return response.json()

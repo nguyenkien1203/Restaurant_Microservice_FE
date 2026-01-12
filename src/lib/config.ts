@@ -35,6 +35,9 @@ export const API_ENDPOINTS = {
     byId: (id: string) => `${API_BASE_URL}/api/orders/${id}`,
     admin: `${API_BASE_URL}/api/orders`,
     updateStatus: (id: string) => `${API_BASE_URL}/api/orders/${id}/status`,
+  },
+  reservation: {
+    updateStatus: (id: string | number) => `${API_BASE_URL}/api/reservations/${id}/status`,
   }
 
 } as const
