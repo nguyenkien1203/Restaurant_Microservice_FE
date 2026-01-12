@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import type { ReservationStatus } from './reservation-row'
 
@@ -13,13 +13,38 @@ interface ReservationStatusDropdownProps {
 const statusConfig: Record<ReservationStatus, { label: string; color: string; bgColor: string }> = {
     PENDING: { label: 'Pending', color: 'text-yellow-700', bgColor: 'bg-yellow-100 hover:bg-yellow-200' },
     CONFIRMED: { label: 'Confirmed', color: 'text-green-700', bgColor: 'bg-green-100 hover:bg-green-200' },
-    SEATED: { label: 'Seated', color: 'text-blue-700', bgColor: 'bg-blue-100 hover:bg-blue-200' },
-    COMPLETED: { label: 'Completed', color: 'text-gray-700', bgColor: 'bg-gray-100 hover:bg-gray-200' },
+    SEATED: { label: 'Seated', color: 'text-orange-700', bgColor: 'bg-orange-100 hover:bg-orange-200' },
+    COMPLETED: { label: 'Completed', color: 'text-blue-700', bgColor: 'bg-blue-100 hover:bg-blue-200' },
     CANCELLED: { label: 'Cancelled', color: 'text-red-700', bgColor: 'bg-red-100 hover:bg-red-200' },
     NO_SHOW: { label: 'No Show', color: 'text-red-700', bgColor: 'bg-red-100 hover:bg-red-200' },
 }
 
 const allStatuses: ReservationStatus[] = ['PENDING', 'CONFIRMED', 'SEATED', 'COMPLETED', 'CANCELLED', 'NO_SHOW']
+
+/**
+ * Get valid next statuses based on current status
+ * Based on backend validation logic:
+ * - PENDING -> CONFIRMED, CANCELLED
+ * - CONFIRMED -> SEATED, CANCELLED, NO_SHOW
+ * - SEATED -> COMPLETED
+ * - COMPLETED, CANCELLED, NO_SHOW -> no transitions (terminal states)
+ */
+function getValidNextStatuses(currentStatus: ReservationStatus): ReservationStatus[] {
+    switch (currentStatus) {
+        case 'PENDING':
+            return ['CONFIRMED', 'CANCELLED']
+        case 'CONFIRMED':
+            return ['SEATED', 'CANCELLED', 'NO_SHOW']
+        case 'SEATED':
+            return ['COMPLETED']
+        case 'COMPLETED':
+        case 'CANCELLED':
+        case 'NO_SHOW':
+            return [] // Terminal states - no transitions allowed
+        default:
+            return []
+    }
+}
 
 export function ReservationStatusDropdown({
     currentStatus,
@@ -27,11 +52,32 @@ export function ReservationStatusDropdown({
     isUpdatingStatus = false,
 }: ReservationStatusDropdownProps) {
     const [isOpen, setIsOpen] = useState(false)
+    const [openUpward, setOpenUpward] = useState(false)
+    const dropdownRef = useRef<HTMLDivElement>(null)
+    const buttonRef = useRef<HTMLButtonElement>(null)
     const config = statusConfig[currentStatus]
+    const validNextStatuses = getValidNextStatuses(currentStatus)
+
+    useEffect(() => {
+        if (isOpen && buttonRef.current) {
+            const buttonRect = buttonRef.current.getBoundingClientRect()
+            const viewportHeight = window.innerHeight
+            const spaceBelow = viewportHeight - buttonRect.bottom
+            const spaceAbove = buttonRect.top
+            const dropdownHeight = 200 // Approximate height of dropdown
+            
+            // Open upward if there's not enough space below but enough space above
+            setOpenUpward(spaceBelow < dropdownHeight && spaceAbove > spaceBelow)
+        }
+    }, [isOpen])
 
     const handleStatusClick = async (newStatus: ReservationStatus) => {
         if (newStatus === currentStatus) {
             setIsOpen(false)
+            return
+        }
+        // Don't allow invalid transitions
+        if (!validNextStatuses.includes(newStatus)) {
             return
         }
         await onStatusUpdate(newStatus)
@@ -39,8 +85,9 @@ export function ReservationStatusDropdown({
     }
 
     return (
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
             <Button
+                ref={buttonRef}
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(!isOpen)}
@@ -63,16 +110,28 @@ export function ReservationStatusDropdown({
                         className="fixed inset-0 z-10"
                         onClick={() => setIsOpen(false)}
                     />
-                    <div className="absolute right-0 top-full mt-1 z-20 bg-popover border border-border rounded-md shadow-lg min-w-[140px]">
+                    <div
+                        className={cn(
+                            'absolute right-0 z-50 bg-popover border border-border rounded-md shadow-lg min-w-[140px]',
+                            openUpward ? 'bottom-full mb-1' : 'top-full mt-1',
+                        )}
+                    >
                         {allStatuses.map((status) => {
                             const statusConf = statusConfig[status]
+                            const isValid = validNextStatuses.includes(status) || status === currentStatus
+                            const isDisabled = !isValid
+                            
                             return (
                                 <button
                                     key={status}
                                     onClick={() => handleStatusClick(status)}
+                                    disabled={isDisabled}
                                     className={cn(
-                                        'w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left',
+                                        'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
                                         status === currentStatus && 'bg-accent',
+                                        isDisabled
+                                            ? 'opacity-50 cursor-not-allowed'
+                                            : 'hover:bg-accent cursor-pointer',
                                     )}
                                 >
                                     <span
@@ -80,7 +139,9 @@ export function ReservationStatusDropdown({
                                             'h-2 w-2 rounded-full',
                                             status === currentStatus
                                                 ? statusConf.bgColor.split(' ')[0]
-                                                : 'bg-transparent border border-border',
+                                                : isDisabled
+                                                    ? 'bg-transparent border border-muted-foreground/30'
+                                                    : 'bg-transparent border border-border',
                                         )}
                                     />
                                     {statusConf.label}

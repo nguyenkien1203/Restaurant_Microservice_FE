@@ -9,7 +9,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useState, useMemo, useCallback } from 'react'
-import { getAllReservations, type ReservationResponse } from '@/lib/api/reservation'
+import { getAllReservations, updateReservationStatus } from '@/lib/api/reservation'
+import type { ReservationResponse } from '@/lib/types/reservation'
 import { cn } from '@/lib/utils'
 import {
   AdminPageHeader,
@@ -32,11 +33,12 @@ export const Route = createFileRoute('/admin/reservations')({
   component: AdminReservations,
 })
 
-type SortField = 'code' | 'date' | 'time' | 'guests' | 'status' | null
+type SortField = 'id' | 'code' | 'date' | 'time' | 'guests' | 'status' | null
 
 function useReservationFilters() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState<ReservationStatusFilter>('all')
+  const [statusFilter, setStatusFilter] =
+    useState<ReservationStatusFilter>('all')
   const [dateFilter, setDateFilter] = useState('')
 
   const clearAllFilters = useCallback(() => {
@@ -46,9 +48,7 @@ function useReservationFilters() {
   }, [])
 
   const hasActiveFilters =
-    searchQuery.length > 0 ||
-    statusFilter !== 'all' ||
-    dateFilter !== ''
+    searchQuery.length > 0 || statusFilter !== 'all' || dateFilter !== ''
 
   return {
     searchQuery,
@@ -88,7 +88,8 @@ function AdminReservations() {
   const queryClient = useQueryClient()
   const filters = useReservationFilters()
   const sorting = useReservationSorting()
-  const [selectedReservation, setSelectedReservation] = useState<ReservationResponse | null>(null)
+  const [selectedReservation, setSelectedReservation] =
+    useState<ReservationResponse | null>(null)
 
   const {
     data: reservations = [],
@@ -99,29 +100,47 @@ function AdminReservations() {
     queryFn: getAllReservations,
   })
 
-  // TODO: Implement status update mutation when API is available
   const updateStatusMutation = useMutation({
     mutationFn: async ({
       reservationId,
       newStatus,
+      reason,
     }: {
       reservationId: number
       newStatus: ReservationStatus
+      reason?: string
     }) => {
-      // TODO: Call API to update status
-      console.log('Update reservation', reservationId, 'to', newStatus)
-      throw new Error('Status update API not implemented yet')
+      return updateReservationStatus(reservationId, {
+        newStatus,
+        reason: reason || `Status updated to ${newStatus} by admin`,
+      })
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['adminReservations'] })
+    onSuccess: (updatedReservation) => {
+      // Update only the specific reservation in the cache instead of refetching all
+      queryClient.setQueryData<ReservationResponse[]>(
+        ['adminReservations'],
+        (oldReservations) => {
+          if (!oldReservations) return [updatedReservation]
+          return oldReservations.map((reservation) =>
+            reservation.id === updatedReservation.id
+              ? updatedReservation
+              : reservation,
+          )
+        },
+      )
+      // Update selected reservation if it's the one being updated
+      if (selectedReservation?.id === updatedReservation.id) {
+        setSelectedReservation(updatedReservation)
+      }
     },
   })
 
   const handleStatusUpdate = async (
     reservationId: number,
     newStatus: ReservationStatus,
+    reason?: string,
   ) => {
-    await updateStatusMutation.mutateAsync({ reservationId, newStatus })
+    await updateStatusMutation.mutateAsync({ reservationId, newStatus, reason })
   }
 
   const filteredReservations = useMemo(() => {
@@ -151,13 +170,21 @@ function AdminReservations() {
       .sort((a, b) => {
         if (!sorting.sortField) {
           // Default: sort by date descending (most recent first)
-          return new Date(b.reservationDate).getTime() - new Date(a.reservationDate).getTime()
+          return (
+            new Date(b.reservationDate).getTime() -
+            new Date(a.reservationDate).getTime()
+          )
         }
         const modifier = sorting.sortDirection === 'asc' ? 1 : -1
+        if (sorting.sortField === 'id') return (a.id - b.id) * modifier
         if (sorting.sortField === 'code')
           return a.confirmationCode.localeCompare(b.confirmationCode) * modifier
         if (sorting.sortField === 'date')
-          return (new Date(a.reservationDate).getTime() - new Date(b.reservationDate).getTime()) * modifier
+          return (
+            (new Date(a.reservationDate).getTime() -
+              new Date(b.reservationDate).getTime()) *
+            modifier
+          )
         if (sorting.sortField === 'time')
           return a.startTime.localeCompare(b.startTime) * modifier
         if (sorting.sortField === 'guests')
@@ -223,7 +250,7 @@ function AdminReservations() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Reservations"
-        description="Manage table reservations"
+        description="Manage and track all table reservations"
       />
 
       <div className="flex flex-col lg:flex-row gap-6 transition-all duration-300">
@@ -251,12 +278,8 @@ function AdminReservations() {
                       {statusCounts['CONFIRMED']} Confirmed
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="h-2 w-2 rounded-full bg-blue-500" />
-                      {statusCounts['SEATED']} Seated
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="h-2 w-2 rounded-full bg-gray-500" />
-                      {statusCounts['COMPLETED']} Completed
+                      <span className="h-2 w-2 rounded-full bg-red-500" />
+                      {statusCounts['CANCELLED']} Cancelled
                     </span>
                   </div>
                 </div>
@@ -277,9 +300,13 @@ function AdminReservations() {
                 tags={filterTags}
                 onClearAll={filters.clearAllFilters}
                 resultCount={
-                  filters.hasActiveFilters ? filteredReservations.length : undefined
+                  filters.hasActiveFilters
+                    ? filteredReservations.length
+                    : undefined
                 }
-                totalCount={filters.hasActiveFilters ? totalReservations : undefined}
+                totalCount={
+                  filters.hasActiveFilters ? totalReservations : undefined
+                }
               />
 
               {isLoading ? (
@@ -296,7 +323,14 @@ function AdminReservations() {
                   <TableHeader>
                     <TableRow>
                       <SortableTableHead
-                        label="Confirmation"
+                        label="ID"
+                        field="id"
+                        currentSortField={sorting.sortField}
+                        currentSortDirection={sorting.sortDirection}
+                        onSort={sorting.handleSort}
+                      />
+                      <SortableTableHead
+                        label="Confirmation Code"
                         field="code"
                         currentSortField={sorting.sortField}
                         currentSortDirection={sorting.sortDirection}
@@ -317,8 +351,9 @@ function AdminReservations() {
                         onSort={sorting.handleSort}
                       />
                       <TableHead>Table</TableHead>
+                      <TableHead>Party</TableHead>
                       <SortableTableHead
-                        label="Guests"
+                        label="Size"
                         field="guests"
                         currentSortField={sorting.sortField}
                         currentSortDirection={sorting.sortDirection}
@@ -340,7 +375,13 @@ function AdminReservations() {
                         key={reservation.id}
                         reservation={reservation}
                         isSelected={selectedReservation?.id === reservation.id}
-                        onSelect={() => setSelectedReservation(reservation)}
+                        onSelect={() =>
+                          setSelectedReservation(
+                            selectedReservation?.id === reservation.id
+                              ? null
+                              : reservation,
+                          )
+                        }
                         onStatusUpdate={handleStatusUpdate}
                         isUpdatingStatus={updateStatusMutation.isPending}
                       />

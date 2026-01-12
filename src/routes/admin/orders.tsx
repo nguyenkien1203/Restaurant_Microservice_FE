@@ -384,8 +384,8 @@ function AdminOrders() {
                 selectedOrderTypes={filters.selectedOrderTypes}
                 onToggleOrderType={filters.toggleOrderType}
                 onClearOrderTypes={() => filters.setSelectedOrderTypes([])}
-              // customerTypeFilter={filters.customerTypeFilter}
-              // onCustomerTypeChange={filters.setCustomerTypeFilter}
+                // customerTypeFilter={filters.customerTypeFilter}
+                // onCustomerTypeChange={filters.setCustomerTypeFilter}
               />
 
               <ActiveFilterTags
@@ -450,7 +450,11 @@ function AdminOrders() {
                         key={order.id}
                         order={order}
                         isSelected={selectedOrder?.id === order.id}
-                        onSelect={() => setSelectedOrder(order)}
+                        onSelect={() =>
+                          setSelectedOrder(
+                            selectedOrder?.id === order.id ? null : order,
+                          )
+                        }
                         onStatusUpdate={handleStatusUpdate}
                         isUpdatingStatus={updateStatusMutation.isPending}
                       />

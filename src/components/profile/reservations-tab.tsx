@@ -3,7 +3,8 @@ import { useQuery } from '@tanstack/react-query'
 import { CalendarX2, CalendarDays, Clock, Users, MapPin, Loader2, AlertCircle, UtensilsCrossed } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { getMyReservations, formatTime24to12, type ReservationResponse } from '@/lib/api/reservation'
+import { getMyReservations, formatTime24to12 } from '@/lib/api/reservation'
+import type { ReservationResponse } from '@/lib/types/reservation'
 
 // Status badge colors
 const statusColors: Record<string, string> = {

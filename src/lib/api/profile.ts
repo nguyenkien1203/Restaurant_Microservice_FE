@@ -64,6 +64,33 @@ export async function updateMyProfile(
 }
 
 /**
+ * Get all user profiles (admin use)
+ */
+export async function getAllProfiles(): Promise<UserProfile[]> {
+  const response = await fetch(API_ENDPOINTS.profile.adminList, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    credentials: 'include',
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      triggerSessionExpired()
+      throw new ProfileApiError('Session expired', 401)
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new ProfileApiError(
+      errorData.message || 'Failed to fetch user profiles.',
+      response.status
+    )
+  }
+
+  return response.json()
+}
+
+/**
  * Get a user profile by ID (admin use)
  */
 export async function getProfileById(userId: string): Promise<UserProfile> {

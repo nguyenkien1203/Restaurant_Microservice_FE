@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
     me: `${API_BASE_URL}/api/profiles/me`,
     update: `${API_BASE_URL}/api/profiles/me`,
     byId: (userId: string) => `${API_BASE_URL}/api/profiles/user/${userId}`,
+    adminList: `${API_BASE_URL}/api/profiles`,
   },
   menu: {
     all: `${API_BASE_URL}/api/menu/all`,
@@ -34,6 +35,15 @@ export const API_ENDPOINTS = {
     byId: (id: string) => `${API_BASE_URL}/api/orders/${id}`,
     admin: `${API_BASE_URL}/api/orders`,
     updateStatus: (id: string) => `${API_BASE_URL}/api/orders/${id}/status`,
-  }
-
+  },
+  reservation: {
+    availability: (date: string, partySize: number) =>
+      `${API_BASE_URL}/api/reservations/availability?date=${date}&partySize=${partySize}`,
+    create: `${API_BASE_URL}/api/reservations`,
+    createGuest: `${API_BASE_URL}/api/reservations/guest`,
+    myReservations: `${API_BASE_URL}/api/reservations/my-reservations`,
+    admin: `${API_BASE_URL}/api/reservations`,
+    updateStatus: (id: string | number) =>
+      `${API_BASE_URL}/api/reservations/${id}/status`,
+  },
 } as const
