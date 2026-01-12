@@ -223,7 +223,7 @@ function AdminReservations() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Reservations"
-        description="Manage table reservations"
+        description="Manage and track all table reservations"
       />
 
       <div className="flex flex-col lg:flex-row gap-6 transition-all duration-300">

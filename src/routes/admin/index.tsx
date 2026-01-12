@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import { StatCard } from '@/components/admin/stat-card'
 import { OrderList } from '@/components/admin/order-list'
 import { SalesChart } from '@/components/admin/sales-chart'
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/lib/auth-context'
 import { AdminPageHeader } from '@/components/admin/admin-page-header'
+import { getMyProfile } from '@/lib/api/profile'
 
 export const Route = createFileRoute('/admin/')({
   component: AdminDashboard,
@@ -21,7 +23,18 @@ export const Route = createFileRoute('/admin/')({
 
 function AdminDashboard() {
   const { user } = useAuth()
-  const displayName = user?.fullName || user?.email?.split('@')[0] || 'Admin'
+
+  // Fetch current profile to get the latest fullName (in case it was updated)
+  const { data: profile } = useQuery({
+    queryKey: ['profile', 'me'],
+    queryFn: getMyProfile,
+    enabled: !!user, // Only fetch if user is logged in
+    staleTime: 30000, // Consider fresh for 30 seconds
+  })
+
+  // Use profile fullName if available, otherwise fall back to auth context
+  const displayName =
+    profile?.fullName || user?.fullName || user?.email?.split('@')[0] || 'Admin'
   const firstName = displayName.split(' ')[0]
 
   return (

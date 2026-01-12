@@ -1,28 +1,28 @@
 import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
+import { useQuery } from '@tanstack/react-query'
 import {
   LayoutDashboard,
   UtensilsCrossed,
   Calendar,
   ShoppingBag,
   Users,
-  BarChart3,
   Settings,
-  ChefHat,
   LogOut,
   Shield,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
+import { getMyProfile } from '@/lib/api/profile'
 
 const navItems = [
   { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
   { href: '/admin/menu', icon: UtensilsCrossed, label: 'Menu Management' },
+  { href: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
   { href: '/admin/reservations', icon: Calendar, label: 'Reservations' },
-  { href: '/admin/kitchen', icon: ChefHat, label: 'Kitchen View' },
-  { href: '/admin/customers', icon: Users, label: 'Customers' },
-  { href: '/admin/staff', icon: Users, label: 'Staff' },
-  { href: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
+  // { href: '/admin/kitchen', icon: ChefHat, label: 'Kitchen View' },
+  { href: '/admin/users', icon: Users, label: 'Users' },
+  // { href: '/admin/staff', icon: Users, label: 'Staff' },
+  // { href: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
   { href: '/admin/settings', icon: Settings, label: 'Settings' },
 ]
 
@@ -32,7 +32,17 @@ export function AdminSidebar() {
   const pathname = router.location.pathname
   const { user, logout } = useAuth()
 
-  const displayName = user?.fullName || user?.email?.split('@')[0] || 'Admin'
+  // Fetch current profile to get the latest fullName (in case it was updated)
+  const { data: profile } = useQuery({
+    queryKey: ['profile', 'me'],
+    queryFn: getMyProfile,
+    enabled: !!user, // Only fetch if user is logged in
+    staleTime: 30000, // Consider fresh for 30 seconds
+  })
+
+  // Use profile fullName if available, otherwise fall back to auth context
+  const displayName =
+    profile?.fullName || user?.fullName || user?.email?.split('@')[0] || 'Admin'
   const displayInitial = displayName.charAt(0).toUpperCase()
 
   const handleLogout = async () => {

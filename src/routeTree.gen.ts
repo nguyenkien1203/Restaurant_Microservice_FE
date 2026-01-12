@@ -22,6 +22,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as OrdersOrderIdRouteImport } from './routes/orders/$orderId'
 import { Route as DemoTanstackQueryRouteImport } from './routes/demo/tanstack-query'
+import { Route as AdminUsersRouteImport } from './routes/admin/users'
 import { Route as AdminStaffRouteImport } from './routes/admin/staff'
 import { Route as AdminSettingsRouteImport } from './routes/admin/settings'
 import { Route as AdminReservationsRouteImport } from './routes/admin/reservations'
@@ -96,6 +97,11 @@ const DemoTanstackQueryRoute = DemoTanstackQueryRouteImport.update({
   path: '/demo/tanstack-query',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUsersRoute = AdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminStaffRoute = AdminStaffRouteImport.update({
   id: '/staff',
   path: '/staff',
@@ -156,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/admin/reservations': typeof AdminReservationsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/admin/users': typeof AdminUsersRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -178,6 +185,7 @@ export interface FileRoutesByTo {
   '/admin/reservations': typeof AdminReservationsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/admin/users': typeof AdminUsersRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/admin': typeof AdminIndexRoute
@@ -202,6 +210,7 @@ export interface FileRoutesById {
   '/admin/reservations': typeof AdminReservationsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/staff': typeof AdminStaffRoute
+  '/admin/users': typeof AdminUsersRoute
   '/demo/tanstack-query': typeof DemoTanstackQueryRoute
   '/orders/$orderId': typeof OrdersOrderIdRoute
   '/admin/': typeof AdminIndexRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/admin/reservations'
     | '/admin/settings'
     | '/admin/staff'
+    | '/admin/users'
     | '/demo/tanstack-query'
     | '/orders/$orderId'
     | '/admin/'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/admin/reservations'
     | '/admin/settings'
     | '/admin/staff'
+    | '/admin/users'
     | '/demo/tanstack-query'
     | '/orders/$orderId'
     | '/admin'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/admin/reservations'
     | '/admin/settings'
     | '/admin/staff'
+    | '/admin/users'
     | '/demo/tanstack-query'
     | '/orders/$orderId'
     | '/admin/'
@@ -385,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoTanstackQueryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/users': {
+      id: '/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AdminUsersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/staff': {
       id: '/admin/staff'
       path: '/staff'
@@ -453,6 +472,7 @@ interface AdminRouteChildren {
   AdminReservationsRoute: typeof AdminReservationsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminStaffRoute: typeof AdminStaffRoute
+  AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -465,6 +485,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReservationsRoute: AdminReservationsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminStaffRoute: AdminStaffRoute,
+  AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 

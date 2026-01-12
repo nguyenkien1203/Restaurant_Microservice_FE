@@ -16,6 +16,7 @@ export const API_ENDPOINTS = {
     me: `${API_BASE_URL}/api/profiles/me`,
     update: `${API_BASE_URL}/api/profiles/me`,
     byId: (userId: string) => `${API_BASE_URL}/api/profiles/user/${userId}`,
+    adminList: `${API_BASE_URL}/api/profiles`,
   },
   menu: {
     all: `${API_BASE_URL}/api/menu/all`,
