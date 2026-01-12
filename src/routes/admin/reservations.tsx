@@ -9,11 +9,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useState, useMemo, useCallback } from 'react'
-import {
-  getAllReservations,
-  updateReservationStatus,
-  type ReservationResponse,
-} from '@/lib/api/reservation'
+import { getAllReservations, updateReservationStatus } from '@/lib/api/reservation'
+import type { ReservationResponse } from '@/lib/types/reservation'
 import { cn } from '@/lib/utils'
 import {
   AdminPageHeader,

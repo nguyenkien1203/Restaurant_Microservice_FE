@@ -14,7 +14,7 @@ import {
   Loader2,
   ShoppingBag,
 } from 'lucide-react'
-import type { ReservationResponse } from '@/lib/api/reservation'
+import type { ReservationResponse } from '@/lib/types/reservation'
 import { formatTime24to12 } from '@/lib/api/reservation'
 import { ReservationStatusDropdown } from './reservation-status-dropdown'
 import type { ReservationStatus } from './reservation-row'
@@ -97,11 +97,14 @@ export function ReservationDetailsCard({
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="flex items-center gap-4 text-lg">
           Reservation Details
+          <div className="font-normal">
           <ReservationStatusDropdown
             currentStatus={status}
             onStatusUpdate={handleStatusUpdate}
             isUpdatingStatus={isUpdatingStatus}
           />
+          </div>
+          
         </CardTitle>
 
         <Button variant="ghost" size="icon" onClick={onClose}>

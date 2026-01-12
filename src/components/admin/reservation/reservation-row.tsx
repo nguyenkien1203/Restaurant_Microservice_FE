@@ -1,7 +1,7 @@
 import { TableCell, TableRow } from '@/components/ui/table'
 import { CalendarDays, Clock, Users, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { ReservationResponse } from '@/lib/api/reservation'
+import type { ReservationResponse } from '@/lib/types/reservation'
 import { formatTime24to12 } from '@/lib/api/reservation'
 import { ReservationStatusDropdown } from './reservation-status-dropdown'
 

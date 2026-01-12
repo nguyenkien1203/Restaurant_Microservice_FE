@@ -13,8 +13,8 @@ interface ReservationStatusDropdownProps {
 const statusConfig: Record<ReservationStatus, { label: string; color: string; bgColor: string }> = {
     PENDING: { label: 'Pending', color: 'text-yellow-700', bgColor: 'bg-yellow-100 hover:bg-yellow-200' },
     CONFIRMED: { label: 'Confirmed', color: 'text-green-700', bgColor: 'bg-green-100 hover:bg-green-200' },
-    SEATED: { label: 'Seated', color: 'text-blue-700', bgColor: 'bg-blue-100 hover:bg-blue-200' },
-    COMPLETED: { label: 'Completed', color: 'text-gray-700', bgColor: 'bg-gray-100 hover:bg-gray-200' },
+    SEATED: { label: 'Seated', color: 'text-orange-700', bgColor: 'bg-orange-100 hover:bg-orange-200' },
+    COMPLETED: { label: 'Completed', color: 'text-blue-700', bgColor: 'bg-blue-100 hover:bg-blue-200' },
     CANCELLED: { label: 'Cancelled', color: 'text-red-700', bgColor: 'bg-red-100 hover:bg-red-200' },
     NO_SHOW: { label: 'No Show', color: 'text-red-700', bgColor: 'bg-red-100 hover:bg-red-200' },
 }
