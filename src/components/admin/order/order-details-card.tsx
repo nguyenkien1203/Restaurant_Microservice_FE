@@ -8,6 +8,11 @@ import {
   MapPin,
   CreditCard,
   Receipt,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  Mail,
+  Phone,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +20,9 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Order, OrderType, OrderStatus } from '@/lib/types/order'
 import { StatusUpdateDropdown } from './status-update-dropdown'
+import { useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getProfileById } from '@/lib/api/profile'
 
 interface OrderDetailsCardProps {
   order: Order
@@ -72,14 +80,18 @@ export function OrderDetailsCard({
   const typeConfig = orderTypeConfig[order.orderType]
   const TypeIcon = typeConfig?.icon || Package2
   const isMemberOrder = !!order.userId
+  const [isUserExpanded, setIsUserExpanded] = useState(false)
 
-  const customerName = isMemberOrder
-    ? 'Member'
-    : order.guestName || order.guestEmail || 'Guest'
-
-  const customerInfo = isMemberOrder
-    ? order.userId
-    : order.guestEmail || order.guestPhone || 'No contact info'
+  // Fetch user profile when expanded (for member orders)
+  const {
+    data: userProfile,
+    isLoading: isLoadingUser,
+    error: userError,
+  } = useQuery({
+    queryKey: ['profile', order.userId],
+    queryFn: () => getProfileById(order.userId!),
+    enabled: !!order.userId && isUserExpanded,
+  })
 
   const subtotal = order.orderItems.reduce(
     (sum, item) => sum + item.subtotal,
@@ -171,26 +183,102 @@ export function OrderDetailsCard({
               )}
               Customer Information
             </h3>
-            <div className="bg-muted/30 rounded-lg p-3 space-y-1">
-              <div>
-                <p className="text-xs text-muted-foreground">Name</p>
-                <p className="text-sm font-medium text-foreground">
-                  {customerName}
-                </p>
+
+            {/* Member Order - Expandable */}
+            {isMemberOrder ? (
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-between"
+                  onClick={() => setIsUserExpanded(!isUserExpanded)}
+                >
+                  <span className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Member User
+                  </span>
+                  {isUserExpanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </Button>
+
+                {isUserExpanded && (
+                  <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                    {isLoadingUser ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                      </div>
+                    ) : userError ? (
+                      <p className="text-sm text-destructive">Failed to load user details</p>
+                    ) : userProfile ? (
+                      <>
+                        {/* User Name */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium">
+                            {userProfile.fullName}
+                          </span>
+                        </div>
+
+                        {/* Email */}
+                        {userProfile.email && (
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{userProfile.email}</span>
+                          </div>
+                        )}
+
+                        {/* Phone */}
+                        {userProfile.phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{userProfile.phone}</span>
+                          </div>
+                        )}
+
+                        {/* Address */}
+                        {userProfile.address && (
+                          <div className="flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{userProfile.address}</span>
+                          </div>
+                        )}
+
+                        {/* User ID */}
+                        <div className="pt-2 border-t border-border">
+                          <span className="text-xs text-muted-foreground">
+                            User ID: {order.userId}
+                          </span>
+                        </div>
+                      </>
+                    ) : null}
+                  </div>
+                )}
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  {isMemberOrder ? 'User ID' : 'Contact'}
-                </p>
-                <p className="text-sm text-foreground">{customerInfo}</p>
-              </div>
-              {!isMemberOrder && order.guestPhone && (
+            ) : (
+              /* Guest Order - Show info directly */
+              <div className="bg-muted/30 rounded-lg p-3 space-y-1">
                 <div>
-                  <p className="text-xs text-muted-foreground">Phone</p>
-                  <p className="text-sm text-foreground">{order.guestPhone}</p>
+                  <p className="text-xs text-muted-foreground">Name</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {order.guestName || order.guestEmail || 'Guest'}
+                  </p>
                 </div>
-              )}
-            </div>
+                {order.guestEmail && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Email</p>
+                    <p className="text-sm text-foreground">{order.guestEmail}</p>
+                  </div>
+                )}
+                {order.guestPhone && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Phone</p>
+                    <p className="text-sm text-foreground">{order.guestPhone}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Order Type */}

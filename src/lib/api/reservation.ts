@@ -77,6 +77,10 @@ export interface CreateReservationRequest {
     startTime: string
     partySize: number
     specialRequests?: string
+    // Guest info (required for guest reservations)
+    guestName?: string
+    guestEmail?: string
+    guestPhone?: string
 }
 
 export interface ReservationResponse {
@@ -110,9 +114,10 @@ export interface ReservationResponse {
 }
 
 /**
- * Create a new reservation
+ * Create a new reservation for authenticated members
+ * Requires authentication (cookies are sent automatically)
  */
-export async function createReservation(
+export async function createMemberReservation(
     request: CreateReservationRequest
 ): Promise<ReservationResponse> {
     const response = await fetch(`${API_BASE_URL}/reservations`, {
@@ -133,10 +138,54 @@ export async function createReservation(
 }
 
 /**
+ * Create a new reservation for guests (no authentication required)
+ */
+export async function createGuestReservation(
+    request: CreateReservationRequest
+): Promise<ReservationResponse> {
+    const response = await fetch(`${API_BASE_URL}/reservations/guest`, {
+        method: 'POST',
+        // No credentials - don't send cookies for guest reservations
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+    })
+
+    if (!response.ok) {
+        const error = await response.text()
+        throw new Error(`Failed to create reservation: ${error || response.statusText}`)
+    }
+
+    return response.json()
+}
+
+/**
  * Get the current user's reservations
  */
 export async function getMyReservations(): Promise<ReservationResponse[]> {
     const response = await fetch(`${API_BASE_URL}/reservations/my-reservations`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch reservations: ${response.statusText}`)
+    }
+
+    return response.json()
+}
+
+
+
+/**
+ * Get all reservations (admin only)
+ */
+export async function getAllReservations(): Promise<ReservationResponse[]> {
+    const response = await fetch(`${API_BASE_URL}/reservations`, {
         method: 'GET',
         credentials: 'include',
         headers: {

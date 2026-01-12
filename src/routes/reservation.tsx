@@ -18,7 +18,7 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import { getMyProfile } from '@/lib/api/profile'
 import type { UserProfile } from '@/lib/types/profile'
-import { checkAvailability, createReservation, formatTime24to12, formatTime12to24 } from '@/lib/api/reservation'
+import { checkAvailability, createMemberReservation, createGuestReservation, formatTime24to12, formatTime12to24 } from '@/lib/api/reservation'
 
 export const Route = createFileRoute('/reservation')({
   component: ReservationPage,
@@ -127,12 +127,23 @@ function ReservationPage() {
       const time24 = formatTime12to24(selectedTime)
       const startTime = time24.substring(0, 5) // Remove seconds, keep HH:mm
 
-      const response = await createReservation({
-        reservationDate,
-        startTime,
-        partySize: guests,
-        specialRequests: specialRequests || undefined,
-      })
+      // Call appropriate API based on auth state
+      const response = isAuthenticated
+        ? await createMemberReservation({
+          reservationDate,
+          startTime,
+          partySize: guests,
+          specialRequests: specialRequests || undefined,
+        })
+        : await createGuestReservation({
+          reservationDate,
+          startTime,
+          partySize: guests,
+          specialRequests: specialRequests || undefined,
+          guestName: `${formData.firstName} ${formData.lastName}`.trim(),
+          guestEmail: formData.email,
+          guestPhone: formData.phone,
+        })
 
       setReservationId(response.id)
       setConfirmationCode(response.confirmationCode)

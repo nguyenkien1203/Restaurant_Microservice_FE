@@ -1,4 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useSearch } from '@tanstack/react-router'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -32,8 +32,17 @@ import { User, UserCircle } from 'lucide-react'
 import type { PaymentStatusFilter } from '@/components/admin/order/order-filters'
 import type { Order } from '@/lib/types/order'
 
+interface OrdersSearchParams {
+  orderId?: number
+}
+
 export const Route = createFileRoute('/admin/orders')({
   component: AdminOrders,
+  validateSearch: (search: Record<string, unknown>): OrdersSearchParams => {
+    return {
+      orderId: search.orderId ? Number(search.orderId) : undefined,
+    }
+  },
 })
 
 type SortField = 'id' | 'date' | 'total' | 'status' | 'payment' | null
@@ -112,6 +121,7 @@ function AdminOrders() {
   const filters = useOrderFilters()
   const sorting = useOrderSorting()
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const { orderId: urlOrderId } = useSearch({ from: '/admin/orders' })
 
   const {
     data: orders = [],
@@ -374,8 +384,8 @@ function AdminOrders() {
                 selectedOrderTypes={filters.selectedOrderTypes}
                 onToggleOrderType={filters.toggleOrderType}
                 onClearOrderTypes={() => filters.setSelectedOrderTypes([])}
-                // customerTypeFilter={filters.customerTypeFilter}
-                // onCustomerTypeChange={filters.setCustomerTypeFilter}
+              // customerTypeFilter={filters.customerTypeFilter}
+              // onCustomerTypeChange={filters.setCustomerTypeFilter}
               />
 
               <ActiveFilterTags
