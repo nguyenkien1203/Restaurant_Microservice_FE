@@ -42,6 +42,8 @@ interface OrderFiltersProps {
   // Customer Type
   // customerTypeFilter: CustomerTypeFilter
   // onCustomerTypeChange: (type: CustomerTypeFilter) => void
+  // Layout
+  isCompact?: boolean
 }
 
 const orderStatusConfig: Record<OrderStatus, { label: string; color: string }> =
@@ -89,16 +91,20 @@ export function OrderFilters({
   onClearOrderTypes,
   // customerTypeFilter,
   // onCustomerTypeChange,
+  isCompact = false,
 }: OrderFiltersProps) {
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
-      <SearchInput
-        value={searchQuery}
-        onChange={onSearchChange}
-        placeholder="Search orders by ID, customer name, email..."
-      />
+    <div className={cn('flex gap-3', isCompact ? 'flex-col' : 'flex-row items-center')}>
+      <div className={isCompact ? 'w-full' : 'flex-1 min-w-0'}>
+        <SearchInput
+          value={searchQuery}
+          onChange={onSearchChange}
+          placeholder="Search orders by ID, customer name, email..."
+          className={isCompact ? '!flex-none !w-full' : ''}
+        />
+      </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className={cn('flex gap-2', isCompact ? 'flex-nowrap overflow-x-auto' : 'flex-nowrap shrink-0')}>
         {/* Order Status Filter */}
         <FilterDropdown
           label="Order Status"

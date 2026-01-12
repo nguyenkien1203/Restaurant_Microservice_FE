@@ -110,7 +110,7 @@ export function OrderRow({
         <div className="flex items-center gap-3">
           <span
             className={cn(
-              'text-xs px-2 py-0.5 rounded',
+              'text-xs font-medium px-2 py-0.5 rounded',
               typeConfig?.color || 'text-gray-600 bg-gray-100',
             )}
           >

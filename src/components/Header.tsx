@@ -11,6 +11,7 @@ import {
   UserCog,
   ChevronDown,
   Shield,
+  CalendarDays,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -123,6 +124,14 @@ export default function Header() {
                     >
                       <LayoutDashboard className="h-4 w-4" />
                       Dashboard
+                    </Link>
+                    <Link
+                      to="/profile"
+                      search={{ tab: 'reservations' }}
+                      className="flex items-center gap-3 px-4 py-2 text-sm text-foreground hover:bg-accent transition-colors cursor-pointer"
+                    >
+                      <CalendarDays className="h-4 w-4" />
+                      Reservations
                     </Link>
                     <Link
                       to="/profile"

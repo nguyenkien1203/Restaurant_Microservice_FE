@@ -414,6 +414,7 @@ function AdminOrders() {
                 selectedOrderTypes={filters.selectedOrderTypes}
                 onToggleOrderType={filters.toggleOrderType}
                 onClearOrderTypes={() => filters.setSelectedOrderTypes([])}
+                isCompact={!!selectedOrder}
                 // customerTypeFilter={filters.customerTypeFilter}
                 // onCustomerTypeChange={filters.setCustomerTypeFilter}
               />
