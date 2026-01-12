@@ -182,3 +182,54 @@ export async function toggleMenuItemAvailability(
   const item: MenuItem = await response.json()
   return normalizeMenuItem(item)
 }
+
+// ============ Image Upload Functions ============
+
+interface PresignedUrlResponse {
+  uploadUrl: string
+  imageUrl: string
+}
+
+/**
+ * Upload a menu item image to S3
+ * 1. Gets presigned URL from backend
+ * 2. Uploads file to S3
+ * 3. Returns the public image URL
+ */
+export async function uploadMenuImage(file: File): Promise<string> {
+  // 1. Request presigned URL from backend
+  const response = await fetch(`${API_BASE_URL}/api/menu/upload-url`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      filename: file.name,
+      contentType: file.type,
+    }),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      triggerSessionExpired()
+      throw new Error('Session expired')
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || 'Failed to get upload URL')
+  }
+
+  const { uploadUrl, imageUrl }: PresignedUrlResponse = await response.json()
+
+  // 2. Upload file directly to S3 using presigned URL
+  const uploadResponse = await fetch(uploadUrl, {
+    method: 'PUT',
+    headers: { 'Content-Type': file.type },
+    body: file,
+  })
+
+  if (!uploadResponse.ok) {
+    throw new Error('Failed to upload image to S3')
+  }
+
+  // 3. Return the public URL
+  return imageUrl
+}

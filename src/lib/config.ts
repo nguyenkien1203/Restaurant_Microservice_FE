@@ -23,6 +23,7 @@ export const API_ENDPOINTS = {
     // Admin endpoints (require auth)
     admin: `${API_BASE_URL}/api/menu`,
     adminById: (id: string) => `${API_BASE_URL}/api/menu/${id}`,
+    uploadUrl: `${API_BASE_URL}/api/menu/upload-url`,
   },
   order: {
     guestCreate: `${API_BASE_URL}/api/orders/guest`,

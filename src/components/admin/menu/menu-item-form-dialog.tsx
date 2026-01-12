@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Dialog,
   DialogHeader,
@@ -12,9 +12,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select } from '@/components/ui/select'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Upload, X, Image as ImageIcon } from 'lucide-react'
 import type { NormalizedMenuItem, MenuItemFormData } from '@/lib/types/menu'
 import { MENU_TAGS } from '@/lib/types/menu'
+import { uploadMenuImage } from '@/lib/api/menu'
 
 const CATEGORY_OPTIONS = [
   { value: 'Appetizers', label: 'Appetizers' },
@@ -55,6 +56,13 @@ export function MenuItemFormDialog({
     Partial<Record<keyof MenuItemFormData, string>>
   >({})
 
+  // Image upload state
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const isEditing = !!item
 
   // Reset form when dialog opens/closes or item changes
@@ -72,11 +80,52 @@ export function MenuItemFormDialog({
         calories: item.calories?.toString() || '',
         tags: item.tags || [],
       })
+      setImagePreview(item.image || null)
     } else if (open) {
       setFormData(DEFAULT_FORM_DATA)
+      setImagePreview(null)
     }
     setErrors({})
+    setImageFile(null)
+    setUploadError(null)
   }, [open, item])
+
+  // Handle file selection
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setUploadError('Image must be less than 5MB')
+      return
+    }
+
+    setImageFile(file)
+    setUploadError(null)
+
+    // Create preview
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleRemoveImage = () => {
+    setImageFile(null)
+    setImagePreview(null)
+    setFormData(prev => ({ ...prev, imageUrl: '' }))
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof MenuItemFormData, string>> = {}
@@ -111,7 +160,29 @@ export function MenuItemFormDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
-    await onSubmit(formData)
+
+    try {
+      let finalImageUrl = formData.imageUrl
+
+      // Upload image if a new file was selected
+      if (imageFile) {
+        setIsUploading(true)
+        setUploadError(null)
+        try {
+          finalImageUrl = await uploadMenuImage(imageFile)
+        } catch (err) {
+          setUploadError(err instanceof Error ? err.message : 'Failed to upload image')
+          setIsUploading(false)
+          return
+        }
+        setIsUploading(false)
+      }
+
+      // Submit with the uploaded image URL
+      await onSubmit({ ...formData, imageUrl: finalImageUrl })
+    } catch (err) {
+      console.error('Failed to submit:', err)
+    }
   }
 
   const updateField = <K extends keyof MenuItemFormData>(
@@ -123,6 +194,8 @@ export function MenuItemFormDialog({
       setErrors((prev) => ({ ...prev, [field]: undefined }))
     }
   }
+
+  const isSubmitting = isLoading || isUploading
 
   return (
     <Dialog open={open} onClose={onClose} className="max-w-2xl">
@@ -230,16 +303,66 @@ export function MenuItemFormDialog({
             </div>
           </div>
 
-          {/* Image URL */}
+          {/* Image Upload */}
           <div className="space-y-2">
-            <Label htmlFor="imageUrl">Image URL</Label>
-            <Input
-              id="imageUrl"
-              type="url"
-              value={formData.imageUrl}
-              onChange={(e) => updateField('imageUrl', e.target.value)}
-              placeholder="https://example.com/image.jpg"
-            />
+            <Label>Image</Label>
+            <div className="flex items-start gap-4">
+              {/* Preview */}
+              <div className="relative w-24 h-24 rounded-lg border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden">
+                {imagePreview ? (
+                  <>
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-1 right-1 p-1 rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </>
+                ) : (
+                  <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                )}
+              </div>
+
+              {/* Upload button */}
+              <div className="flex-1 space-y-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isSubmitting}
+                  className="w-full"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {imageFile ? 'Change Image' : 'Upload Image'}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  PNG, JPG, GIF up to 5MB
+                </p>
+                {uploadError && (
+                  <p className="text-xs text-destructive">{uploadError}</p>
+                )}
+                {isUploading && (
+                  <p className="text-xs text-primary flex items-center gap-1">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    Uploading...
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
 
           {/* Tags */}
@@ -280,13 +403,13 @@ export function MenuItemFormDialog({
             type="button"
             variant="outline"
             onClick={onClose}
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
             Cancel
           </Button>
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            {isEditing ? 'Save Changes' : 'Add Item'}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {isUploading ? 'Uploading...' : isEditing ? 'Save Changes' : 'Add Item'}
           </Button>
         </DialogFooter>
       </form>
