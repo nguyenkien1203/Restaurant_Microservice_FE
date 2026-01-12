@@ -4,6 +4,7 @@ import {
   Package2,
   Handbag,
   Clock,
+  UtensilsCrossed,
   User,
   UserCircle,
   CreditCard,
@@ -72,6 +73,7 @@ const orderTypeConfig: Record<
   DELIVERY: { label: 'Delivery', icon: Package2 },
   TAKEAWAY: { label: 'Takeaway', icon: Handbag },
   PRE_ORDER: { label: 'Pre-Order', icon: Clock },
+  DINE_IN: { label: 'Dine In', icon: UtensilsCrossed },
 }
 
 export function OrderFilters({

@@ -9,8 +9,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { useState, useMemo, useCallback } from 'react'
-import { getAdminOrders, updateOrderStatus } from '@/lib/api/order'
+import {
+  getAdminOrders,
+  updateOrderStatus,
+  createDineInOrder,
+} from '@/lib/api/order'
 import type { OrderType, OrderStatus } from '@/lib/types/order'
+import type { CreateDineInOrderRequest } from '@/lib/types/order'
 import { cn } from '@/lib/utils'
 import {
   AdminPageHeader,
@@ -25,10 +30,12 @@ import {
   OrderRow,
   OrderFilters,
   OrderDetailsCard,
+  DineInOrderDialog,
   type OrderStatusFilter,
   type CustomerTypeFilter,
 } from '@/components/admin/order'
-import { User, UserCircle } from 'lucide-react'
+import { User, UserCircle, Plus } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import type { PaymentStatusFilter } from '@/components/admin/order/order-filters'
 import type { Order } from '@/lib/types/order'
 
@@ -121,6 +128,7 @@ function AdminOrders() {
   const filters = useOrderFilters()
   const sorting = useOrderSorting()
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [isDineInDialogOpen, setIsDineInDialogOpen] = useState(false)
   const { orderId: urlOrderId } = useSearch({ from: '/admin/orders' })
 
   const {
@@ -163,6 +171,24 @@ function AdminOrders() {
     reason?: string,
   ) => {
     await updateStatusMutation.mutateAsync({ orderId, newStatus, reason })
+  }
+
+  const createDineInMutation = useMutation({
+    mutationFn: (data: CreateDineInOrderRequest) => createDineInOrder(data),
+    onSuccess: (newOrder) => {
+      // Add the new order to the list
+      queryClient.setQueryData<Order[]>(['adminOrders'], (oldOrders) => {
+        if (!oldOrders) return [newOrder]
+        return [newOrder, ...oldOrders]
+      })
+      // Select the newly created order
+      setSelectedOrder(newOrder)
+      setIsDineInDialogOpen(false)
+    },
+  })
+
+  const handleCreateDineIn = async (data: CreateDineInOrderRequest) => {
+    await createDineInMutation.mutateAsync(data)
   }
 
   const orderTypes = useMemo(() => {
@@ -369,6 +395,10 @@ function AdminOrders() {
                     </span>
                   </div>
                 </div>
+                <Button onClick={() => setIsDineInDialogOpen(true)}>
+                  <Plus className="h-4 w-4" />
+                  Add Dine-In Order
+                </Button>
               </div>
             </CardHeader>
 
@@ -478,6 +508,13 @@ function AdminOrders() {
           </div>
         )}
       </div>
+
+      <DineInOrderDialog
+        open={isDineInDialogOpen}
+        onClose={() => setIsDineInDialogOpen(false)}
+        onSubmit={handleCreateDineIn}
+        isLoading={createDineInMutation.isPending}
+      />
     </div>
   )
 }

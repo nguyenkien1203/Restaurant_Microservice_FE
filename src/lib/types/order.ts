@@ -1,4 +1,4 @@
-export type OrderType = 'PRE_ORDER' | 'TAKEAWAY' | 'DELIVERY'
+export type OrderType = 'PRE_ORDER' | 'TAKEAWAY' | 'DELIVERY' | 'DINE_IN'
 
 export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED'
 
@@ -27,6 +27,13 @@ export interface CreatePreOrderRequest {
   items: CreateOrderItemRequest[]
   paymentMethod: PaymentMethod
   notes?: string
+}
+
+export interface CreateDineInOrderRequest {
+  tableId: number
+  items: CreateOrderItemRequest[]
+  notes?: string
+  reservationId?: number
 }
 
 export interface UpdateOrderStatusRequest {

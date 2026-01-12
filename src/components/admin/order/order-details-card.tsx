@@ -3,6 +3,7 @@ import {
   Package2,
   Handbag,
   Clock,
+  UtensilsCrossed,
   User,
   UserCircle,
   MapPin,
@@ -56,6 +57,12 @@ const orderTypeConfig: Record<
     label: 'Pre-Order',
     color: 'text-purple-600',
     bgColor: 'bg-purple-100',
+  },
+  DINE_IN: {
+    icon: UtensilsCrossed,
+    label: 'Dine In',
+    color: 'text-blue-600',
+    bgColor: 'bg-blue-100',
   },
 }
 
@@ -211,7 +218,9 @@ export function OrderDetailsCard({
                         <Loader2 className="h-5 w-5 animate-spin text-primary" />
                       </div>
                     ) : userError ? (
-                      <p className="text-sm text-destructive">Failed to load user details</p>
+                      <p className="text-sm text-destructive">
+                        Failed to load user details
+                      </p>
                     ) : userProfile ? (
                       <>
                         {/* User Name */}
@@ -241,7 +250,9 @@ export function OrderDetailsCard({
                         {userProfile.address && (
                           <div className="flex items-center gap-2">
                             <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{userProfile.address}</span>
+                            <span className="text-sm">
+                              {userProfile.address}
+                            </span>
                           </div>
                         )}
 
@@ -268,13 +279,17 @@ export function OrderDetailsCard({
                 {order.guestEmail && (
                   <div>
                     <p className="text-xs text-muted-foreground">Email</p>
-                    <p className="text-sm text-foreground">{order.guestEmail}</p>
+                    <p className="text-sm text-foreground">
+                      {order.guestEmail}
+                    </p>
                   </div>
                 )}
                 {order.guestPhone && (
                   <div>
                     <p className="text-xs text-muted-foreground">Phone</p>
-                    <p className="text-sm text-foreground">{order.guestPhone}</p>
+                    <p className="text-sm text-foreground">
+                      {order.guestPhone}
+                    </p>
                   </div>
                 )}
               </div>
@@ -303,7 +318,9 @@ export function OrderDetailsCard({
                   ? 'Order will be delivered to the address'
                   : order.orderType === 'TAKEAWAY'
                     ? 'Customer will pick up the order'
-                    : 'Pre-ordered for scheduled time'}
+                    : order.orderType === 'DINE_IN'
+                      ? 'Order for dine-in service'
+                      : 'Pre-ordered for scheduled time'}
               </p>
             </div>
           </div>
