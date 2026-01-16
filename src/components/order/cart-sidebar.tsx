@@ -81,23 +81,23 @@ const orderTypeOptions: {
   icon: React.ReactNode
   requiresReservation?: boolean
 }[] = [
-    {
-      value: 'PRE_ORDER',
-      label: 'Pre-order',
-      icon: <CalendarCheck className="h-4 w-4" />,
-      requiresReservation: true,
-    },
-    {
-      value: 'TAKEAWAY',
-      label: 'Takeaway',
-      icon: <Handbag className="h-4 w-4" />,
-    },
-    {
-      value: 'DELIVERY',
-      label: 'Delivery',
-      icon: <Package2 className="h-4 w-4" />,
-    },
-  ]
+  {
+    value: 'PRE_ORDER',
+    label: 'Pre-order',
+    icon: <CalendarCheck className="h-4 w-4" />,
+    requiresReservation: true,
+  },
+  {
+    value: 'TAKEAWAY',
+    label: 'Takeaway',
+    icon: <Handbag className="h-4 w-4" />,
+  },
+  {
+    value: 'DELIVERY',
+    label: 'Delivery',
+    icon: <Package2 className="h-4 w-4" />,
+  },
+]
 
 interface CartSidebarProps {
   items: CartItem[]
@@ -105,6 +105,12 @@ interface CartSidebarProps {
   onRemoveItem: (id: string) => void
   onUpdateNotes?: (id: string, notes: string) => void
   reservationId?: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  reservationDate?: string
+  reservationTime?: string
 }
 
 export function CartSidebar({
@@ -113,25 +119,42 @@ export function CartSidebar({
   onRemoveItem,
   onUpdateNotes,
   reservationId,
+  firstName,
+  lastName,
+  email,
+  phone,
+  reservationDate,
+  reservationTime,
 }: CartSidebarProps) {
   const navigate = useNavigate()
   const [orderType, setOrderType] = useState<OrderType>(() => {
-    // Default to PRE_ORDER if reservationId is present
+    // If reservationId is present, always use PRE_ORDER
     if (reservationId) return 'PRE_ORDER'
-    return getOrderTypeFromStorage() || 'TAKEAWAY'
+
+    // If no reservationId, get stored type
+    const storedType = getOrderTypeFromStorage()
+    if (storedType === 'PRE_ORDER') return 'TAKEAWAY'
+    return storedType || 'TAKEAWAY'
   })
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null)
   const [notesValue, setNotesValue] = useState('')
 
   // Filter order type options based on whether we have a reservationId
   const availableOrderTypes = useMemo(() => {
-    return orderTypeOptions.filter(option => {
+    return orderTypeOptions.filter((option) => {
       if (option.requiresReservation) {
         return !!reservationId
       }
       return true
     })
   }, [reservationId])
+
+  // Reset orderType to TAKEAWAY if reservationId is removed and current type is PRE_ORDER
+  useEffect(() => {
+    if (!reservationId && orderType === 'PRE_ORDER') {
+      setOrderType('TAKEAWAY')
+    }
+  }, [reservationId, orderType])
 
   // Save cart and orderType to localStorage whenever they change
   useEffect(() => {
@@ -158,19 +181,29 @@ export function CartSidebar({
             How would you like your order?
           </p>
           <div className="flex flex-col gap-2">
-            {availableOrderTypes.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setOrderType(option.value)}
-                className={`flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm transition-colors ${orderType === option.value
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+            {availableOrderTypes.map((option) => {
+              const isDisabled =
+                orderType === 'PRE_ORDER' && option.value !== 'PRE_ORDER'
+              const isSelected = orderType === option.value
+
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => !isDisabled && setOrderType(option.value)}
+                  disabled={isDisabled}
+                  className={`flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm transition-colors ${
+                    isSelected
+                      ? 'bg-primary text-primary-foreground'
+                      : isDisabled
+                        ? 'bg-muted/70 text-muted-foreground/70 cursor-not-allowed opacity-50'
+                        : 'bg-muted/70 text-muted-foreground hover:bg-accent hover:text-accent-foreground'
                   }`}
-              >
-                {option.icon}
-                <span>{option.label}</span>
-              </button>
-            ))}
+                >
+                  {option.icon}
+                  <span>{option.label}</span>
+                </button>
+              )
+            })}
           </div>
         </CardContent>
       </Card>
@@ -326,7 +359,7 @@ export function CartSidebar({
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Tax (8%)</span>
+                  <span className="text-muted-foreground">Tax (8%)</span>
                   <span className="text-card-foreground">
                     ${tax.toFixed(2)}
                   </span>
@@ -344,15 +377,37 @@ export function CartSidebar({
                   saveCartToStorage(items)
                   saveOrderTypeToStorage(orderType)
 
-                  if (orderType === 'DELIVERY' || orderType === 'TAKEAWAY' || orderType === 'PRE_ORDER') {
+                  if (
+                    orderType === 'DELIVERY' ||
+                    orderType === 'TAKEAWAY' ||
+                    orderType === 'PRE_ORDER'
+                  ) {
+                    const checkoutSearch: Record<string, string> = {}
+                    if (reservationId)
+                      checkoutSearch.reservationId = reservationId
+                    if (firstName) checkoutSearch.firstName = firstName
+                    if (lastName) checkoutSearch.lastName = lastName
+                    if (email) checkoutSearch.email = email
+                    if (phone) checkoutSearch.phone = phone
+                    if (reservationDate)
+                      checkoutSearch.reservationDate = reservationDate
+                    if (reservationTime)
+                      checkoutSearch.reservationTime = reservationTime
+
                     navigate({
                       to: '/checkout',
-                      search: reservationId ? { reservationId } : undefined,
+                      search:
+                        Object.keys(checkoutSearch).length > 0
+                          ? checkoutSearch
+                          : undefined,
                     })
                   } else {
                     navigate({
                       to: '/order-confirmation',
-                      search: { orderId: `ORD-${Date.now()}` },
+                      search: {
+                        orderId: `ORD-${Date.now()}`,
+                        isGuest: 'false' as any,
+                      },
                     })
                   }
                 }}

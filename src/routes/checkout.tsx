@@ -29,15 +29,27 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import type { UserProfile } from '@/lib/types/profile'
 import { getMyProfile } from '@/lib/api/profile'
-import { createMemberOrder, createPreOrder } from '@/lib/api/order'
+import {
+  createMemberOrder,
+  createPreOrder,
+  createGuestOrder,
+} from '@/lib/api/order'
 import type {
   CreateMemberOrderRequest,
   CreateOrderItemRequest,
   CreatePreOrderRequest,
+  CreateGuestOrderRequest,
+  Order,
 } from '@/lib/types/order'
 
 interface CheckoutSearchParams {
   reservationId?: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  reservationDate?: string
+  reservationTime?: string
 }
 
 export const Route = createFileRoute('/checkout')({
@@ -45,6 +57,12 @@ export const Route = createFileRoute('/checkout')({
   validateSearch: (search: Record<string, unknown>): CheckoutSearchParams => {
     return {
       reservationId: search.reservationId as string | undefined,
+      firstName: search.firstName as string | undefined,
+      lastName: search.lastName as string | undefined,
+      email: search.email as string | undefined,
+      phone: search.phone as string | undefined,
+      reservationDate: search.reservationDate as string | undefined,
+      reservationTime: search.reservationTime as string | undefined,
     }
   },
 })
@@ -52,7 +70,16 @@ export const Route = createFileRoute('/checkout')({
 function CheckoutPage() {
   const navigate = useNavigate()
   const search = useSearch({ from: '/checkout' })
-  const reservationId = search.reservationId
+  // const reservationId = search.reservationId
+  const {
+    firstName,
+    lastName,
+    email,
+    phone,
+    reservationId,
+    reservationDate,
+    reservationTime,
+  } = search
 
   const { isAuthenticated, user } = useAuth()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -72,10 +99,13 @@ function CheckoutPage() {
       return
     }
 
-    if (storedOrderType) {
+    // If reservationId is present, force orderType to PRE_ORDER
+    if (reservationId) {
+      setOrderType('PRE_ORDER')
+    } else if (storedOrderType) {
       setOrderType(storedOrderType)
     }
-  }, [navigate])
+  }, [navigate, reservationId])
 
   // Calculate pickup time options
   const getPickupTimeOptions = () => {
@@ -98,14 +128,26 @@ function CheckoutPage() {
   }
 
   const pickupTimeOptions = getPickupTimeOptions()
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    address: '',
-    pickupTime: pickupTimeOptions[0].value, // Default to ASAP
-    notes: '',
-  })
+
+  // Initialize form data with contact info from reservation (for guest users)
+  const getInitialFormData = () => {
+    const fullName =
+      firstName && lastName
+        ? `${firstName} ${lastName}`
+        : firstName || lastName || ''
+
+    return {
+      fullName,
+      email: email || '',
+      phone: phone || '',
+      address: '',
+      pickupTime: pickupTimeOptions[0].value, // Default to ASAP
+      notes: '',
+    }
+  }
+
+  const [formData, setFormData] = useState(getInitialFormData())
+
   // Fetch user profile if authenticated
   useEffect(() => {
     if (isAuthenticated) {
@@ -125,8 +167,21 @@ function CheckoutPage() {
         .catch((err) => {
           console.error('Failed to fetch profile:', err)
         })
+    } else if (firstName || lastName || email || phone) {
+      // For guest users, auto-fill from reservation contact info if available
+      const fullName =
+        firstName && lastName
+          ? `${firstName} ${lastName}`
+          : firstName || lastName || ''
+
+      setFormData((prev) => ({
+        ...prev,
+        fullName: fullName || prev.fullName,
+        email: email || prev.email,
+        phone: phone || prev.phone,
+      }))
     }
-  }, [isAuthenticated])
+  }, [isAuthenticated, firstName, lastName, email, phone])
 
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -159,12 +214,6 @@ function CheckoutPage() {
       return
     }
 
-    // For now, only authenticated users can create orders via memberCreate endpoint
-    if (!isAuthenticated) {
-      setError('Please log in to place an order. Guest checkout coming soon!')
-      return
-    }
-
     setIsProcessing(true)
 
     try {
@@ -177,51 +226,132 @@ function CheckoutPage() {
 
       let createdOrder
 
-      // Check if this is a pre-order (has reservationId and is PRE_ORDER type)
-      if (orderType === 'PRE_ORDER' && reservationId) {
-        // Build pre-order request
-        const preOrderRequest: CreatePreOrderRequest = {
-          items: orderItems,
-          paymentMethod: 'CASH',
-          notes: formData.notes || undefined,
+      if (!isAuthenticated) {
+        // Guest order creation
+        // TODO: Implement guest pre-order endpoint that doesn't require credentials.
+        if (orderType === 'PRE_ORDER') {
+          setError(
+            'Pre-orders for guests are not yet available. Please log in to create a pre-order.',
+          )
+          setIsProcessing(false)
+          return
         }
 
-        createdOrder = await createPreOrder(reservationId, preOrderRequest)
-      } else {
-        // Build the regular order request
-        const orderRequest: CreateMemberOrderRequest = {
+        // Guest can create TAKEAWAY or DELIVERY orders
+        const guestOrderRequest: CreateGuestOrderRequest = {
           orderType: orderType,
           items: orderItems,
-          paymentMethod: 'CASH', // Currently only CASH is supported
+          paymentMethod: 'CASH',
+          guestName: formData.fullName,
+          guestEmail: formData.email,
+          guestPhone: formData.phone,
           notes: formData.notes || undefined,
         }
 
         // Add delivery address for delivery orders
         if (orderType === 'DELIVERY' && formData.address) {
-          orderRequest.deliveryAddress = formData.address
+          guestOrderRequest.deliveryAddress = formData.address
         }
 
-      // Add estimated pickup time for takeaway orders
-      if (orderType === 'TAKEAWAY' && formData.pickupTime) {
-        const selectedOption = pickupTimeOptions.find(
-          (opt) => opt.value === formData.pickupTime,
-        )
-        if (selectedOption) {
-          orderRequest.estimatedPickupTime = selectedOption.datetime
+        // Add estimated pickup time for takeaway orders
+        if (orderType === 'TAKEAWAY' && formData.pickupTime) {
+          const selectedOption = pickupTimeOptions.find(
+            (opt) => opt.value === formData.pickupTime,
+          )
+          if (selectedOption) {
+            guestOrderRequest.estimatedPickupTime = selectedOption.datetime
+          }
         }
-      }
 
-        createdOrder = await createMemberOrder(orderRequest)
+        createdOrder = await createGuestOrder(guestOrderRequest)
+        console.log('Guest order created:', createdOrder)
+      } else {
+        // Authenticated user order creation
+        // Check if this is a pre-order (has reservationId and is PRE_ORDER type)
+        if (orderType === 'PRE_ORDER' && reservationId) {
+          // Build pre-order request
+          const preOrderRequest: CreatePreOrderRequest = {
+            items: orderItems,
+            paymentMethod: 'CASH',
+            notes: formData.notes || undefined,
+          }
+
+          createdOrder = await createPreOrder(reservationId, preOrderRequest)
+        } else {
+          // Build the regular order request
+          const orderRequest: CreateMemberOrderRequest = {
+            orderType: orderType,
+            items: orderItems,
+            paymentMethod: 'CASH', // Currently only CASH is supported
+            notes: formData.notes || undefined,
+          }
+
+          // Add delivery address for delivery orders
+          if (orderType === 'DELIVERY' && formData.address) {
+            orderRequest.deliveryAddress = formData.address
+          }
+
+          // Add estimated pickup time for takeaway orders
+          if (orderType === 'TAKEAWAY' && formData.pickupTime) {
+            const selectedOption = pickupTimeOptions.find(
+              (opt) => opt.value === formData.pickupTime,
+            )
+            if (selectedOption) {
+              orderRequest.estimatedPickupTime = selectedOption.datetime
+            }
+          }
+
+          createdOrder = await createMemberOrder(orderRequest)
+        }
       }
 
       // Clear cart after successful order
       clearCartStorage()
 
-      // Navigate to order confirmation with the actual order ID
-      navigate({
-        to: '/order-confirmation',
-        search: { orderId: String(createdOrder.id) },
-      })
+      // For guest users, pass order data through navigation state
+      // (since they can't fetch it from API without credentials)
+      if (!isAuthenticated) {
+        if (!createdOrder || !createdOrder.id) {
+          console.error(
+            'Order creation failed or invalid response:',
+            createdOrder,
+          )
+          setError('Failed to create order. Please try again.')
+          setIsProcessing(false)
+          return
+        }
+
+        const orderIdStr = String(createdOrder.id)
+
+        // Ensure orderItems exists (backend might not include it in response)
+        const orderToPass: Order = {
+          ...createdOrder,
+          orderItems:
+            createdOrder.orderItems ||
+            cartItems.map((item) => ({
+              id: 0, // Temporary ID
+              menuItemId: item.id,
+              menuItemName: item.name,
+              quantity: item.quantity,
+              unitPrice: item.price,
+              subtotal: item.price * item.quantity,
+              notes: item.notes,
+            })),
+        }
+
+        // Pass order data through navigation state
+        navigate({
+          to: '/order-confirmation',
+          search: { orderId: orderIdStr, isGuest: 'true' as any },
+          state: { order: orderToPass } as any,
+        })
+      } else {
+        // Authenticated users: navigate with orderId (will fetch from API)
+        navigate({
+          to: '/order-confirmation',
+          search: { orderId: String(createdOrder.id), isGuest: 'false' as any },
+        })
+      }
     } catch (err) {
       console.error('Failed to create order:', err)
       setError(
@@ -265,9 +395,7 @@ function CheckoutPage() {
             {getOrderTypeIcon()}
             <div>
               <h1 className="text-2xl font-bold text-foreground">Checkout</h1>
-              <p className="text-muted-foreground">
-                {getOrderTypeLabel()}
-              </p>
+              <p className="text-muted-foreground">{getOrderTypeLabel()}</p>
             </div>
           </div>
         </div>
@@ -296,6 +424,12 @@ function CheckoutPage() {
                       <div className="flex items-center gap-2">
                         <Clock className="h-5 w-5 text-primary" />
                         <span>Pickup Time</span>
+                      </div>
+                    )}
+                    {isPreOrder && (
+                      <div className="flex items-center gap-2">
+                        <CalendarCheck className="h-5 w-5 text-primary" />
+                        <span>Reservation Details</span>
                       </div>
                     )}
                   </CardTitle>
@@ -341,15 +475,19 @@ function CheckoutPage() {
                         <div className="flex flex-col gap-4">
                           <div className="space-y-2">
                             <Label htmlFor="fullName">Full Name</Label>
-                            <Input
-                              id="fullName"
-                              name="fullName"
-                              placeholder="John Doe"
-                              value={formData.fullName}
-                              onChange={handleInputChange}
-                              disabled={isAuthenticated}
-                              required
-                            />
+                            <div className="relative">
+                              <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="fullName"
+                                name="fullName"
+                                placeholder="John Doe"
+                                className="pl-10"
+                                value={formData.fullName}
+                                onChange={handleInputChange}
+                                disabled={isAuthenticated}
+                                required
+                              />
+                            </div>
                           </div>
                           <div className="space-y-2">
                             <Label htmlFor="phone">Phone</Label>
@@ -435,6 +573,48 @@ function CheckoutPage() {
                         </div>
                       </div>
                     )}
+
+                    {/* Right Column - Pickup Time (only for takeaway) */}
+                    {isPreOrder && (
+                      <div className="flex flex-col gap-4">
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground">
+                            Reservation ID
+                          </p>
+                          <p className="text-md text-foreground font-medium">
+                            {reservationId || '—'}
+                          </p>
+                        </div>
+                        {reservationDate && (
+                          <div className="flex-1">
+                            <p className="text-sm text-muted-foreground">
+                              Reservation Date
+                            </p>
+                            <p className="text-md text-foreground font-medium">
+                              {new Date(reservationDate).toLocaleDateString(
+                                'en-US',
+                                {
+                                  weekday: 'long',
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                },
+                              )}
+                            </p>
+                          </div>
+                        )}
+                        {reservationTime && (
+                          <div className="flex-1">
+                            <p className="text-sm text-muted-foreground">
+                              Reservation Time
+                            </p>
+                            <p className="text-md text-foreground font-medium">
+                              {reservationTime}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -478,7 +658,11 @@ function CheckoutPage() {
                       </div>
                       <div>
                         <p className="font-medium text-foreground">
-                          {isPreOrder ? 'Pay at Restaurant' : isDelivery ? 'Pay on Delivery' : 'Pay on Pickup'}
+                          {isPreOrder
+                            ? 'Pay at Restaurant'
+                            : isDelivery
+                              ? 'Pay on Delivery'
+                              : 'Pay on Pickup'}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           Cash or card accepted
@@ -490,8 +674,7 @@ function CheckoutPage() {
                   <p className="text-xs text-muted-foreground mt-3">
                     {isPreOrder
                       ? 'Your pre-order will be ready when you arrive for your reservation.'
-                      : 'Online payment coming soon. For now, pay when you receive your order.'
-                    }
+                      : 'Online payment coming soon. For now, pay when you receive your order.'}
                   </p>
                 </CardContent>
               </Card>

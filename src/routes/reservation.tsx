@@ -1,7 +1,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useState, useEffect, useCallback } from 'react'
 import { Calendar } from '@/components/reservations/calendar'
-import { TimeSlots, type TimeSlotData } from '@/components/reservations/time-slots'
+import {
+  TimeSlots,
+  type TimeSlotData,
+} from '@/components/reservations/time-slots'
 import { GuestSelector } from '@/components/reservations/guest-selector'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -18,7 +21,13 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import { getMyProfile } from '@/lib/api/profile'
 import type { UserProfile } from '@/lib/types/profile'
-import { checkAvailability, createMemberReservation, createGuestReservation, formatTime24to12, formatTime12to24 } from '@/lib/api/reservation'
+import {
+  checkAvailability,
+  createMemberReservation,
+  createGuestReservation,
+  formatTime24to12,
+  formatTime12to24,
+} from '@/lib/api/reservation'
 
 export const Route = createFileRoute('/reservation')({
   component: ReservationPage,
@@ -68,30 +77,33 @@ function ReservationPage() {
   }, [isAuthenticated])
 
   // Fetch availability when date or guests change
-  const fetchAvailability = useCallback(async (date: Date, partySize: number) => {
-    setIsLoadingSlots(true)
-    setSelectedTime(null) // Reset selected time when fetching new availability
+  const fetchAvailability = useCallback(
+    async (date: Date, partySize: number) => {
+      setIsLoadingSlots(true)
+      setSelectedTime(null) // Reset selected time when fetching new availability
 
-    try {
-      // Format date as YYYY-MM-DD
-      const dateStr = date.toISOString().split('T')[0]
-      const response = await checkAvailability(dateStr, partySize)
+      try {
+        // Format date as YYYY-MM-DD
+        const dateStr = date.toISOString().split('T')[0]
+        const response = await checkAvailability(dateStr, partySize)
 
-      // Convert backend response to TimeSlotData format
-      const slots: TimeSlotData[] = response.availableSlots.map((slot) => ({
-        time: formatTime24to12(slot.time),
-        available: slot.tablesAvailable > 0,
-        tablesAvailable: slot.tablesAvailable,
-      }))
+        // Convert backend response to TimeSlotData format
+        const slots: TimeSlotData[] = response.availableSlots.map((slot) => ({
+          time: formatTime24to12(slot.time),
+          available: slot.tablesAvailable > 0,
+          tablesAvailable: slot.tablesAvailable,
+        }))
 
-      setTimeSlots(slots)
-    } catch (error) {
-      console.error('Failed to fetch availability:', error)
-      setTimeSlots([]) // Clear slots on error
-    } finally {
-      setIsLoadingSlots(false)
-    }
-  }, [])
+        setTimeSlots(slots)
+      } catch (error) {
+        console.error('Failed to fetch availability:', error)
+        setTimeSlots([]) // Clear slots on error
+      } finally {
+        setIsLoadingSlots(false)
+      }
+    },
+    [],
+  )
 
   useEffect(() => {
     if (selectedDate) {
@@ -130,20 +142,20 @@ function ReservationPage() {
       // Call appropriate API based on auth state
       const response = isAuthenticated
         ? await createMemberReservation({
-          reservationDate,
-          startTime,
-          partySize: guests,
-          specialRequests: specialRequests || undefined,
-        })
+            reservationDate,
+            startTime,
+            partySize: guests,
+            specialRequests: specialRequests || undefined,
+          })
         : await createGuestReservation({
-          reservationDate,
-          startTime,
-          partySize: guests,
-          specialRequests: specialRequests || undefined,
-          guestName: `${formData.firstName} ${formData.lastName}`.trim(),
-          guestEmail: formData.email,
-          guestPhone: formData.phone,
-        })
+            reservationDate,
+            startTime,
+            partySize: guests,
+            specialRequests: specialRequests || undefined,
+            guestName: `${formData.firstName} ${formData.lastName}`.trim(),
+            guestEmail: formData.email,
+            guestPhone: formData.phone,
+          })
 
       setReservationId(response.id)
       setConfirmationCode(response.confirmationCode)
@@ -155,7 +167,9 @@ function ReservationPage() {
       setStep(3)
     } catch (error) {
       console.error('Failed to create reservation:', error)
-      setSubmitError(error instanceof Error ? error.message : 'Failed to create reservation')
+      setSubmitError(
+        error instanceof Error ? error.message : 'Failed to create reservation',
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -172,6 +186,23 @@ function ReservationPage() {
       guests: guests.toString(),
       name,
     })
+
+    // For guest users, pass contact info to menu/checkout
+    if (!isAuthenticated) {
+      if (formData.firstName) params.set('firstName', formData.firstName)
+      if (formData.lastName) params.set('lastName', formData.lastName)
+      if (formData.email) params.set('email', formData.email)
+      if (formData.phone) params.set('phone', formData.phone)
+    }
+
+    // Always pass reservation date and time for pre-orders
+    if (selectedDate) {
+      params.set('reservationDate', selectedDate.toISOString())
+    }
+    if (selectedTime) {
+      params.set('reservationTime', selectedTime)
+    }
+
     navigate({ to: '/menu', search: Object.fromEntries(params) })
   }
 
@@ -272,7 +303,7 @@ function ReservationPage() {
                       </h3>
 
                       <div className="grid grid-cols-2 gap-4">
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="firstName">First Name</Label>
                           <Input
                             id="firstName"
@@ -286,7 +317,7 @@ function ReservationPage() {
                             }
                           />
                         </div>
-                        <div>
+                        <div className="space-y-2">
                           <Label htmlFor="lastName">Last Name</Label>
                           <Input
                             id="lastName"
@@ -302,7 +333,7 @@ function ReservationPage() {
                         </div>
                       </div>
 
-                      <div>
+                      <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
                         <Input
                           id="email"
@@ -315,7 +346,7 @@ function ReservationPage() {
                         />
                       </div>
 
-                      <div>
+                      <div className="space-y-2">
                         <Label htmlFor="phone">Phone</Label>
                         <Input
                           id="phone"
@@ -594,7 +625,9 @@ function ReservationPage() {
                       {isAuthenticated && step === 1 && (
                         <Button
                           className="w-full mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
-                          disabled={isSubmitting || !selectedDate || !selectedTime}
+                          disabled={
+                            isSubmitting || !selectedDate || !selectedTime
+                          }
                           onClick={handleConfirmReservation}
                         >
                           {isSubmitting ? 'Creating...' : 'Confirm Reservation'}
