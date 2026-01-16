@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
   ArrowLeft,
@@ -18,6 +18,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrderStatusBadge } from '@/components/order/order-status-badge'
 import { getOrderById } from '@/lib/api/order'
+import { fetchMenuItems } from '@/lib/api/menu'
+import { saveCartToStorage } from '@/components/order/cart-sidebar'
+import type { CartItem } from '@/components/order/cart-sidebar'
 import { cn } from '@/lib/utils'
 import type { OrderType } from '@/lib/types/order'
 
@@ -224,7 +227,7 @@ function OrderDetailsPage() {
                   </p>
                 </div>
               </div>
-              
+
               {/* Estimated Pickup Time */}
               {order.estimatedPickupTime && (
                 <div className="mt-4 pt-4 border-t border-border flex items-start gap-3">
@@ -238,7 +241,7 @@ function OrderDetailsPage() {
                     </p>
                   </div>
                 </div>
-              )}  
+              )}
 
               {/* Delivery Address */}
               {order.deliveryAddress && (
@@ -386,12 +389,52 @@ function OrderDetailsPage() {
               <Home className="h-4 w-4 mr-2" />
               Back to Home
             </Button>
-            <Link to="/menu" className="flex-1">
-              <Button className="w-full">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Order Again
-              </Button>
-            </Link>
+            <Button
+              className="flex-1"
+              onClick={async () => {
+                try {
+                  // Fetch all menu items to get full menu item data
+                  const menuItems = await fetchMenuItems()
+
+                  // Convert order items to cart items
+                  const cartItems: CartItem[] = []
+                  for (const orderItem of order.orderItems) {
+                    // Find the full menu item by menuItemId
+                    const menuItem = menuItems.find(
+                      (item) => item.id === orderItem.menuItemId,
+                    )
+
+                    // If menu item not found, skip it
+                    if (!menuItem) {
+                      console.warn(
+                        `Menu item ${orderItem.menuItemId} not found, skipping`,
+                      )
+                      continue
+                    }
+
+                    // Convert to cart item with quantity and notes from order
+                    cartItems.push({
+                      ...menuItem,
+                      quantity: orderItem.quantity,
+                      notes: orderItem.notes,
+                    })
+                  }
+
+                  // Save cart to localStorage
+                  saveCartToStorage(cartItems)
+
+                  // Navigate to menu page
+                  navigate({ to: '/menu' })
+                } catch (error) {
+                  console.error('Failed to prepare order again:', error)
+                  // Navigate to menu anyway, but cart won't be populated
+                  navigate({ to: '/menu' })
+                }
+              }}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Order Again
+            </Button>
           </div>
         </div>
       </div>
