@@ -22,6 +22,12 @@ interface MenuSearchParams {
   time?: string
   guests?: string
   name?: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  phone?: string
+  reservationDate?: string
+  reservationTime?: string
 }
 
 export const Route = createFileRoute('/menu')({
@@ -33,6 +39,12 @@ export const Route = createFileRoute('/menu')({
       time: search.time as string | undefined,
       guests: search.guests as string | undefined,
       name: search.name as string | undefined,
+      firstName: search.firstName as string | undefined,
+      lastName: search.lastName as string | undefined,
+      email: search.email as string | undefined,
+      phone: search.phone as string | undefined,
+      reservationDate: search.reservationDate as string | undefined,
+      reservationTime: search.reservationTime as string | undefined,
     }
   },
 })
@@ -145,6 +157,12 @@ export default function MenuPage() {
                 onRemoveItem={removeItem}
                 onUpdateNotes={updateNotes}
                 reservationId={reservationId}
+                firstName={search.firstName}
+                lastName={search.lastName}
+                email={search.email}
+                phone={search.phone}
+                reservationDate={search.reservationDate}
+                reservationTime={search.reservationTime}
               />
             </div>
           </div>

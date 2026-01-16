@@ -1,4 +1,8 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  useNavigate,
+  useRouterState,
+} from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,6 +17,7 @@ import {
   AlertCircle,
   Loader2,
   ClipboardList,
+  X,
 } from 'lucide-react'
 import { getOrderById } from '@/lib/api/order'
 import type { Order, OrderType } from '@/lib/types/order'
@@ -20,8 +25,16 @@ import type { Order, OrderType } from '@/lib/types/order'
 export const Route = createFileRoute('/order-confirmation')({
   component: OrderConfirmationPage,
   validateSearch: (search: Record<string, unknown>) => {
+    const isGuestValue =
+      search.isGuest === 'true' ||
+      search.isGuest === true ||
+      search.isGuest === 'false'
+        ? search.isGuest === 'true' || search.isGuest === true
+        : false
+
     return {
       orderId: (search.orderId as string) || '',
+      isGuest: isGuestValue,
     }
   },
 })
@@ -68,11 +81,13 @@ const orderTypeConfig: Record<
 
 function OrderConfirmationPage() {
   const navigate = useNavigate()
-  const { orderId } = Route.useSearch()
+  const router = useRouterState()
+  const { orderId, isGuest } = Route.useSearch()
 
   const [order, setOrder] = useState<Order | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showLoginModal, setShowLoginModal] = useState(false)
 
   useEffect(() => {
     if (!orderId) {
@@ -81,19 +96,39 @@ function OrderConfirmationPage() {
       return
     }
 
-    getOrderById(orderId)
-      .then((fetchedOrder) => {
-        setOrder(fetchedOrder)
+    // Normalize orderId - remove quotes and ensure it's a clean string
+    const rawOrderId = String(orderId)
+    const normalizedOrderId = rawOrderId.replace(/^["']|["']$/g, '')
+
+    // For guest users, get order data from navigation state
+    if (isGuest) {
+      // Get order from navigation state (passed from checkout page)
+      const orderFromState = (router.location.state as { order?: Order })?.order
+
+      if (orderFromState) {
+        setOrder(orderFromState)
         setIsLoading(false)
-      })
-      .catch((err) => {
-        console.error('Failed to fetch order:', err)
-        setError(
-          err instanceof Error ? err.message : 'Failed to load order details',
-        )
+      } else {
+        // If order is not in state (e.g., page refresh), show error
+        setError('Order data not found. Please complete your order again.')
         setIsLoading(false)
-      })
-  }, [orderId])
+      }
+    } else {
+      // For authenticated users, fetch from API
+      getOrderById(normalizedOrderId)
+        .then((fetchedOrder) => {
+          setOrder(fetchedOrder)
+          setIsLoading(false)
+        })
+        .catch((err) => {
+          console.error('Failed to fetch order:', err)
+          setError(
+            err instanceof Error ? err.message : 'Failed to load order details',
+          )
+          setIsLoading(false)
+        })
+    }
+  }, [orderId, isGuest, router.location.state])
 
   // Loading state
   if (isLoading) {
@@ -331,9 +366,13 @@ function OrderConfirmationPage() {
             <Button
               variant="outline"
               className="flex-1"
-              onClick={() =>
-                navigate({ to: '/profile', search: { tab: 'orders' } })
-              }
+              onClick={() => {
+                if (isGuest) {
+                  setShowLoginModal(true)
+                } else {
+                  navigate({ to: '/profile', search: { tab: 'orders' } })
+                }
+              }}
             >
               <ClipboardList className="h-4 w-4 mr-2" />
               View Order History
@@ -348,6 +387,53 @@ function OrderConfirmationPage() {
           </div>
         </div>
       </div>
+
+      {/* Login Required Modal for Guests */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full">
+            <CardContent className="p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    Sign In Required
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Please sign up or sign in to view your order history and
+                    track your orders.
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setShowLoginModal(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowLoginModal(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => {
+                    setShowLoginModal(false)
+                    navigate({ to: '/login' })
+                  }}
+                >
+                  Sign In / Sign Up
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

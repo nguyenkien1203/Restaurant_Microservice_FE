@@ -4,6 +4,7 @@ import type {
   CreateMemberOrderRequest,
   CreatePreOrderRequest,
   CreateDineInOrderRequest,
+  CreateGuestOrderRequest,
   Order,
   UpdateOrderStatusRequest,
 } from '@/lib/types/order'
@@ -60,6 +61,28 @@ export async function createPreOrder(
     }
     const errorData = await response.json().catch(() => ({}))
     throw new Error(errorData.message || `Failed to create pre-order: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Create a new order for guest users (no authentication required)
+ */
+export async function createGuestOrder(
+  orderData: CreateGuestOrderRequest
+): Promise<Order> {
+  const response = await fetch(API_ENDPOINTS.order.guestCreate, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(orderData),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || `Failed to create guest order: ${response.status}`)
   }
 
   return response.json()
