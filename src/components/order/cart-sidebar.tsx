@@ -128,13 +128,13 @@ export function CartSidebar({
 }: CartSidebarProps) {
   const navigate = useNavigate()
   const [orderType, setOrderType] = useState<OrderType>(() => {
-    // Default to PRE_ORDER if reservationId is present
+    // If reservationId is present, always use PRE_ORDER
     if (reservationId) return 'PRE_ORDER'
-    if (getOrderTypeFromStorage() === 'PRE_ORDER' && reservationId)
-      return 'PRE_ORDER'
-    if (getOrderTypeFromStorage() === 'PRE_ORDER' && !reservationId)
-      return 'TAKEAWAY'
-    return getOrderTypeFromStorage() || 'TAKEAWAY'
+
+    // If no reservationId, get stored type
+    const storedType = getOrderTypeFromStorage()
+    if (storedType === 'PRE_ORDER') return 'TAKEAWAY'
+    return storedType || 'TAKEAWAY'
   })
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null)
   const [notesValue, setNotesValue] = useState('')
@@ -148,6 +148,13 @@ export function CartSidebar({
       return true
     })
   }, [reservationId])
+
+  // Reset orderType to TAKEAWAY if reservationId is removed and current type is PRE_ORDER
+  useEffect(() => {
+    if (!reservationId && orderType === 'PRE_ORDER') {
+      setOrderType('TAKEAWAY')
+    }
+  }, [reservationId, orderType])
 
   // Save cart and orderType to localStorage whenever they change
   useEffect(() => {
@@ -174,20 +181,29 @@ export function CartSidebar({
             How would you like your order?
           </p>
           <div className="flex flex-col gap-2">
-            {availableOrderTypes.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setOrderType(option.value)}
-                className={`flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm transition-colors ${
-                  orderType === option.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground'
-                }`}
-              >
-                {option.icon}
-                <span>{option.label}</span>
-              </button>
-            ))}
+            {availableOrderTypes.map((option) => {
+              const isDisabled =
+                orderType === 'PRE_ORDER' && option.value !== 'PRE_ORDER'
+              const isSelected = orderType === option.value
+
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => !isDisabled && setOrderType(option.value)}
+                  disabled={isDisabled}
+                  className={`flex items-center gap-2 px-2.5 py-2.5 rounded-lg text-sm transition-colors ${
+                    isSelected
+                      ? 'bg-primary text-primary-foreground'
+                      : isDisabled
+                        ? 'bg-muted/70 text-muted-foreground/70 cursor-not-allowed opacity-50'
+                        : 'bg-muted/70 text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                >
+                  {option.icon}
+                  <span>{option.label}</span>
+                </button>
+              )
+            })}
           </div>
         </CardContent>
       </Card>
