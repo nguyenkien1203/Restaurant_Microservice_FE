@@ -17,10 +17,11 @@ import {
   AlertCircle,
   Loader2,
   ClipboardList,
-  X,
+  LogIn,
 } from 'lucide-react'
 import { getOrderById } from '@/lib/api/order'
 import type { Order, OrderType } from '@/lib/types/order'
+import { PopupModal } from '@/components/ui/popup-modal'
 
 export const Route = createFileRoute('/order-confirmation')({
   component: OrderConfirmationPage,
@@ -389,51 +390,20 @@ function OrderConfirmationPage() {
       </div>
 
       {/* Login Required Modal for Guests */}
-      {showLoginModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="max-w-md w-full">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">
-                    Sign In Required
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Please sign up or sign in to view your order history and
-                    track your orders.
-                  </p>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setShowLoginModal(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowLoginModal(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1"
-                  onClick={() => {
-                    setShowLoginModal(false)
-                    navigate({ to: '/login' })
-                  }}
-                >
-                  Sign In / Sign Up
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <PopupModal
+        open={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        title="Sign In Required"
+        description="Please sign up or log in to view your order history and track your orders."
+        icon={LogIn}
+        iconColor="text-primary"
+        iconBgColor="bg-primary/10"
+        primaryButtonText="Log In / Sign Up"
+        primaryButtonAction={() => navigate({ to: '/login' })}
+        secondaryButtonText="Cancel"
+        showCloseButton={true}
+        primaryButtonIcon={LogIn}
+      />
     </div>
   )
 }
