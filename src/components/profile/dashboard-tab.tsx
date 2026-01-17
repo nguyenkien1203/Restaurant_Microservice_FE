@@ -152,30 +152,29 @@ export function DashboardTab({
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center text-center py-4">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                  <CalendarX2 className="h-6 w-6 text-muted-foreground" />
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-3">
+                  <CalendarX2 className="h-10 w-10 text-muted-foreground" />
                 </div>
-                <h3 className="font-semibold text-foreground text-sm mb-1">
+                <h3 className="font-semibold text-foreground text-md mb-1">
                   No upcoming reservations
                 </h3>
-                <p className="text-xs text-muted-foreground mb-3">
+                <p className="text-sm text-muted-foreground mb-4">
                   Time to plan your next meal?
                 </p>
-                <div className="flex gap-2">
+                <div className="flex gap-4">
                   <Link to="/menu">
                     <Button
                       variant="outline"
-                      size="sm"
-                      className="text-xs border-primary text-primary hover:bg-primary/10"
+                      className="text-sm border-primary text-primary hover:bg-primary/10 hover:text-primary"
                     >
                       <UtensilsCrossed className="h-3 w-3" />
-                      Menu
+                      Browse Menu
                     </Button>
                   </Link>
                   <Link to="/reservation">
-                    <Button size="sm" className="text-xs bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Button className="text-sm bg-primary text-primary-foreground hover:bg-primary/90">
                       <CalendarDays className="h-3 w-3" />
-                      Book
+                      Book a Table
                     </Button>
                   </Link>
                 </div>

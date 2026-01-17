@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import { ClipboardList, Loader2, AlertCircle } from 'lucide-react'
+import { ClipboardX, Loader2, AlertCircle } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { OrderCard } from './order-card'
@@ -104,13 +104,11 @@ export function OrderList({
         )}
         <Card>
           <CardContent className="p-12 flex flex-col items-center justify-center text-center">
-            <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <ClipboardList className="h-8 w-8 text-muted-foreground" />
-            </div>
+            <ClipboardX className="h-16 w-16 text-muted-foreground mb-4" />
             <h3 className="font-semibold text-foreground mb-2">
               {emptyState.title}
             </h3>
-            <p className="text-muted-foreground mb-6 max-w-sm">
+            <p className="text-muted-foreground mb-6">
               {emptyState.description}
             </p>
             {emptyState.action && (

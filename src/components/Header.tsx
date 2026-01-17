@@ -57,7 +57,7 @@ export default function Header() {
             </span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8">
+          <div className="hidden md:flex items-center gap-12">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
@@ -228,7 +228,7 @@ export default function Header() {
               <div className="flex flex-col gap-2 pt-2 border-t border-border">
                 {isAuthenticated && user ? (
                   <>
-                    <div className="flex items-center gap-3 py-2">
+                    {/* <div className="flex items-center gap-3 py-2">
                       <div className="w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
                         <span className="text-sm font-semibold text-primary">
                           {user.fullName?.charAt(0)?.toUpperCase() ||
@@ -283,7 +283,7 @@ export default function Header() {
                           </span>
                         </span>
                       </Link>
-                    )}
+                    )} */}
                     <Button
                       variant="ghost"
                       size="sm"

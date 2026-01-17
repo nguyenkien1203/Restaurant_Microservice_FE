@@ -65,6 +65,7 @@ export default function MenuPage() {
     data: menuItems = [],
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ['menuItems'],
     queryFn: fetchMenuItems,
@@ -146,6 +147,7 @@ export default function MenuPage() {
                 onItemSelect={setSelectedItem}
                 onAddToCart={addToCart}
                 onUpdateQuantity={updateQuantity}
+                onRetry={() => refetch()}
               />
             </div>
 

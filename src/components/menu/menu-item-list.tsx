@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card'
-import { Loader2 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
 import { MenuItemCard } from './menu-item-card'
 
@@ -11,6 +12,7 @@ interface MenuItemListProps {
   onItemSelect: (item: NormalizedMenuItem) => void
   onAddToCart: (item: NormalizedMenuItem) => void
   onUpdateQuantity: (id: string, quantity: number) => void
+  onRetry?: () => void
 }
 
 export function MenuItemList({
@@ -21,6 +23,7 @@ export function MenuItemList({
   onItemSelect,
   onAddToCart,
   onUpdateQuantity,
+  onRetry,
 }: MenuItemListProps) {
   if (isLoading) {
     return (
@@ -33,11 +36,35 @@ export function MenuItemList({
 
   if (error) {
     return (
-      <Card className="bg-destructive/10 border-destructive/20">
-        <CardContent className="py-8 text-center">
-          <p className="text-destructive">
-            Failed to load menu. Please try again later.
-          </p>
+      <Card className="border-border">
+        <CardContent className="py-12 px-6">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <div className="h-16 w-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+              <AlertCircle className="h-8 w-8 text-amber-500" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-foreground">
+                Unable to Load Menu
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                We're having trouble loading our menu. Please check your
+                connection and try again.
+              </p>
+            </div>
+            {onRetry && (
+              <Button
+                onClick={onRetry}
+                variant="outline"
+                className="mt-2"
+                disabled={isLoading}
+              >
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`}
+                />
+                Try Again
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
     )
