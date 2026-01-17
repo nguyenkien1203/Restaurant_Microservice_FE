@@ -29,8 +29,6 @@ export default function Header() {
     { to: '/', label: 'Home' },
     { to: '/menu', label: 'Menu' },
     { to: '/reservation', label: 'Reservations' },
-    { to: '/order', label: 'Order Online' },
-    { to: '/about', label: 'About' },
   ]
 
   const isActive = (path: string) => {
@@ -312,17 +310,6 @@ export default function Header() {
                     >
                       <Button variant="outline" size="sm">
                         Sign Up
-                      </Button>
-                    </Link>
-                    <Link
-                      to={'/reservation' as '/'}
-                      onClick={() => setMobileMenuOpen(false)}
-                    >
-                      <Button
-                        size="sm"
-                        className="bg-primary text-primary-foreground"
-                      >
-                        Book a Table
                       </Button>
                     </Link>
                   </div>

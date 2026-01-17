@@ -15,7 +15,6 @@ export function Navbar() {
     { to: '/', label: 'Home' },
     { to: '/menu', label: 'Menu' },
     { to: '/reservation', label: 'Reservations' },
-    { to: '/about', label: 'About' },
   ]
 
   const isActive = (path: string) => {
