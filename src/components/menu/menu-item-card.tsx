@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Minus, Flame, Leaf, XCircle } from 'lucide-react'
+import { Plus, Minus, Flame, Leaf } from 'lucide-react'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
 import { MENU_TAGS } from '@/lib/types/menu'
 
@@ -25,7 +25,7 @@ export function MenuItemCard({
   return (
     <Card
       id={`menu-item-${item.id}`}
-      className={`bg-card overflow-hidden hover:shadow-md transition-shadow cursor-pointer ${
+      className={`bg-card overflow-hidden hover:shadow-md transition-shadow cursor-pointer py-0 ${
         isHighlighted ? 'ring-1 ring-primary shadow-lg' : ''
       }`}
       onClick={() => onSelect(item)}
@@ -35,10 +35,10 @@ export function MenuItemCard({
           <img
             src={item.image || '/placeholder.svg'}
             alt={item.name}
-            className="w-32 h-32 object-cover"
+            className="w-42 h-42 object-cover"
           />
         </div>
-        <CardContent className="flex-1 p-4 flex flex-col justify-between">
+        <CardContent className="flex-1 p-4 flex flex-col justify-between my-2">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <h3 className="font-semibold text-card-foreground">

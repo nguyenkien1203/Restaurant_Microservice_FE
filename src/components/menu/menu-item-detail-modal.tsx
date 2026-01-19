@@ -29,14 +29,14 @@ export function MenuItemDetailModal({
       onClick={onClose}
     >
       <Card
-        className="bg-card max-w-lg w-full max-h-[90vh] overflow-auto"
+        className="bg-card max-w-lg w-full max-h-[90vh] overflow-auto pt-0"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative">
           <img
             src={item.image || '/placeholder.svg'}
             alt={item.name}
-            className="w-full h-48 object-cover"
+            className="w-full h-64 object-cover"
           />
           <button
             onClick={onClose}
