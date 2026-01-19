@@ -21,5 +21,5 @@ export function getSortedCategories(
       name: cat.charAt(0).toUpperCase() + cat.slice(1),
     }))
 
-  return [{ id: 'all', name: 'All' }, ...categories]
+  return categories
 }

@@ -11,6 +11,7 @@ interface MenuItemCardProps {
   onSelect: (item: NormalizedMenuItem) => void
   onAddToCart: (item: NormalizedMenuItem) => void
   onUpdateQuantity: (id: string, quantity: number) => void
+  isHighlighted?: boolean
 }
 
 export function MenuItemCard({
@@ -19,10 +20,14 @@ export function MenuItemCard({
   onSelect,
   onAddToCart,
   onUpdateQuantity,
+  isHighlighted = false,
 }: MenuItemCardProps) {
   return (
     <Card
-      className="bg-card overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+      id={`menu-item-${item.id}`}
+      className={`bg-card overflow-hidden hover:shadow-md transition-shadow cursor-pointer ${
+        isHighlighted ? 'ring-1 ring-primary shadow-lg' : ''
+      }`}
       onClick={() => onSelect(item)}
     >
       <div className="flex">

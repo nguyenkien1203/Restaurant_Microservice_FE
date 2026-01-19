@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Loader2, AlertCircle, RefreshCw } from 'lucide-react'
@@ -13,6 +14,8 @@ interface MenuItemListProps {
   onAddToCart: (item: NormalizedMenuItem) => void
   onUpdateQuantity: (id: string, quantity: number) => void
   onRetry?: () => void
+  highlightItemId?: string | null
+  onHighlightComplete?: () => void
 }
 
 export function MenuItemList({
@@ -24,7 +27,24 @@ export function MenuItemList({
   onAddToCart,
   onUpdateQuantity,
   onRetry,
+  highlightItemId,
+  onHighlightComplete,
 }: MenuItemListProps) {
+  useEffect(() => {
+    if (!highlightItemId) return
+
+    const target = document.getElementById(`menu-item-${highlightItemId}`)
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+
+    const timeout = window.setTimeout(() => {
+      onHighlightComplete?.()
+    }, 2000)
+
+    return () => window.clearTimeout(timeout)
+  }, [highlightItemId, items, onHighlightComplete])
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -92,6 +112,7 @@ export function MenuItemList({
           onSelect={onItemSelect}
           onAddToCart={onAddToCart}
           onUpdateQuantity={onUpdateQuantity}
+          isHighlighted={highlightItemId === item.id}
         />
       ))}
     </div>

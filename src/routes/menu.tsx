@@ -1,5 +1,5 @@
 import { createFileRoute, useSearch } from '@tanstack/react-router'
-import { useState, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   CartSidebar,
@@ -28,6 +28,7 @@ interface MenuSearchParams {
   phone?: string
   reservationDate?: string
   reservationTime?: string
+  itemId?: string
 }
 
 export const Route = createFileRoute('/menu')({
@@ -45,6 +46,7 @@ export const Route = createFileRoute('/menu')({
       phone: search.phone as string | undefined,
       reservationDate: search.reservationDate as string | undefined,
       reservationTime: search.reservationTime as string | undefined,
+      itemId: search.itemId as string | undefined,
     }
   },
 })
@@ -53,7 +55,8 @@ export default function MenuPage() {
   const search = useSearch({ from: '/menu' })
   const reservationId = search.reservationId
 
-  const [activeCategory, setActiveCategory] = useState('all')
+  const [activeCategory, setActiveCategory] = useState('appetizers')
+  const [highlightItemId, setHighlightItemId] = useState<string | null>(null)
   const [cart, setCart] = useState<CartItem[]>(() => {
     return getCartFromStorage()
   })
@@ -72,15 +75,34 @@ export default function MenuPage() {
   })
 
   const filteredItems = useMemo(() => {
-    return activeCategory === 'all'
-      ? menuItems
-      : menuItems.filter((item) => item.category === activeCategory)
+    return menuItems.filter((item) => item.category === activeCategory)
   }, [menuItems, activeCategory])
 
   const availableCategories = useMemo(
     () => getSortedCategories(menuItems),
     [menuItems],
   )
+
+  useEffect(() => {
+    if (availableCategories.length === 0) return
+
+    const hasActive = availableCategories.some((c) => c.id === activeCategory)
+    if (!hasActive) {
+      // Default to appetizers if present, otherwise fall back to first available category
+      const appetizers = availableCategories.find((c) => c.id === 'appetizers')
+      setActiveCategory(appetizers?.id ?? availableCategories[0].id)
+    }
+  }, [availableCategories, activeCategory])
+
+  useEffect(() => {
+    if (!search.itemId || menuItems.length === 0) return
+
+    const target = menuItems.find((item) => item.id === search.itemId)
+    if (!target) return
+
+    setActiveCategory(target.category)
+    setHighlightItemId(target.id)
+  }, [search.itemId, menuItems])
 
   const addToCart = (item: NormalizedMenuItem, notes?: string) => {
     // Prevent adding unavailable items
@@ -148,6 +170,8 @@ export default function MenuPage() {
                 onAddToCart={addToCart}
                 onUpdateQuantity={updateQuantity}
                 onRetry={() => refetch()}
+                highlightItemId={highlightItemId}
+                onHighlightComplete={() => setHighlightItemId(null)}
               />
             </div>
 
