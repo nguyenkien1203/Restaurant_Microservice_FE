@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 import type { OrderStatus } from '@/lib/types/order'
 
@@ -110,21 +111,52 @@ export function StatusUpdateDropdown({
 }: StatusUpdateDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [openUpward, setOpenUpward] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    top: number
+    left: number
+    width: number
+  } | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const config = statusConfig[currentStatus]
   const validNextStatuses = getValidNextStatuses(currentStatus)
 
-  useEffect(() => {
-    if (isOpen && buttonRef.current) {
-      const buttonRect = buttonRef.current.getBoundingClientRect()
-      const viewportHeight = window.innerHeight
-      const spaceBelow = viewportHeight - buttonRect.bottom
-      const spaceAbove = buttonRect.top
-      const dropdownHeight = 300 // Approximate height of dropdown
+  // Calculate dropdown position relative to viewport so it can render outside the table
+  const updateDropdownPosition = () => {
+    if (!buttonRef.current) return
+    const buttonRect = buttonRef.current.getBoundingClientRect()
+    const viewportHeight = window.innerHeight
+    const spaceBelow = viewportHeight - buttonRect.bottom
+    const spaceAbove = buttonRect.top
+    const dropdownHeight = 260 // Approximate dropdown height
 
-      // Open upward if there's not enough space below but enough space above
-      setOpenUpward(spaceBelow < dropdownHeight && spaceAbove > spaceBelow)
+    const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow
+    setOpenUpward(shouldOpenUpward)
+
+    const top = shouldOpenUpward
+      ? Math.max(8, buttonRect.top - dropdownHeight)
+      : Math.min(viewportHeight - 8, buttonRect.bottom)
+
+    setDropdownPosition({
+      top,
+      left: buttonRect.left,
+      width: buttonRect.width,
+    })
+  }
+
+  useEffect(() => {
+    if (!isOpen) return
+    updateDropdownPosition()
+
+    const handleResizeOrScroll = () => {
+      updateDropdownPosition()
+    }
+
+    window.addEventListener('resize', handleResizeOrScroll)
+    window.addEventListener('scroll', handleResizeOrScroll, true)
+
+    return () => {
+      window.removeEventListener('resize', handleResizeOrScroll)
+      window.removeEventListener('scroll', handleResizeOrScroll, true)
     }
   }, [isOpen])
 
@@ -158,13 +190,13 @@ export function StatusUpdateDropdown({
   }
 
   return (
-      <div className="relative" ref={dropdownRef}>
+    <div className="relative">
       <Button
         ref={buttonRef}
         variant="ghost"
         size="sm"
-        onClick={() => setIsOpen(!isOpen)}
-          disabled={isUpdatingStatus}
+        onClick={() => setIsOpen((prev) => !prev)}
+        disabled={isUpdatingStatus}
         className={cn(
           'text-xs px-2 py-1 h-auto',
           config.bgColor,
@@ -177,54 +209,62 @@ export function StatusUpdateDropdown({
         {config.label}
       </Button>
 
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
-          />
-          <div
-            className={cn(
-              'absolute right-0 z-50 bg-popover border border-border rounded-md shadow-lg min-w-[160px]',
-              openUpward ? 'bottom-full mb-1' : 'top-full mt-1',
-            )}
-          >
-            {allStatuses.map((status) => {
-              const statusConf = statusConfig[status]
-              const isValid =
-                validNextStatuses.includes(status) || status === currentStatus
-              const isDisabled = !isValid
+      {isOpen &&
+        dropdownPosition &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <>
+            <div
+              className="fixed inset-0 z-40"
+              onClick={() => setIsOpen(false)}
+            />
+            <div
+              className={cn(
+                'fixed z-50 bg-popover border border-border rounded-md shadow-lg min-w-[160px]',
+              )}
+              style={{
+                top: dropdownPosition.top,
+                left: dropdownPosition.left,
+                minWidth: dropdownPosition.width,
+              }}
+            >
+              {allStatuses.map((status) => {
+                const statusConf = statusConfig[status]
+                const isValid =
+                  validNextStatuses.includes(status) || status === currentStatus
+                const isDisabled = !isValid
 
-              return (
-              <button
-                  key={status}
-                  onClick={() => handleStatusClick(status)}
-                  disabled={isDisabled}
-                  className={cn(
-                    'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
-                    status === currentStatus && 'bg-accent',
-                    isDisabled
-                      ? 'opacity-50 cursor-not-allowed'
-                      : 'hover:bg-accent cursor-pointer',
-                  )}
-                >
-                  <span
+                return (
+                  <button
+                    key={status}
+                    onClick={() => handleStatusClick(status)}
+                    disabled={isDisabled}
                     className={cn(
-                      'h-2 w-2 rounded-full',
-                      status === currentStatus
-                        ? statusConf.bgColor.split(' ')[0]
-                        : isDisabled
-                          ? 'bg-transparent border border-muted-foreground/30'
-                          : 'bg-transparent border border-border',
+                      'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
+                      status === currentStatus && 'bg-accent',
+                      isDisabled
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:bg-accent cursor-pointer',
                     )}
-                  />
-                  {statusConf.label}
-              </button>
-              )
-            })}
-          </div>
-        </>
+                  >
+                    <span
+                      className={cn(
+                        'h-2 w-2 rounded-full',
+                        status === currentStatus
+                          ? statusConf.bgColor.split(' ')[0]
+                          : isDisabled
+                            ? 'bg-transparent border border-muted-foreground/30'
+                            : 'bg-transparent border border-border',
+                      )}
+                    />
+                    {statusConf.label}
+                  </button>
+                )
+              })}
+            </div>
+          </>,
+          document.body,
         )}
-      </div>
+    </div>
   )
 }
