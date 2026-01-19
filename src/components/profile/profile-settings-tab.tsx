@@ -7,6 +7,7 @@ import {
   Loader2,
   Shield,
   UserCog,
+  Award,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,13 +16,43 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth-context'
 import { updateMyProfile } from '@/lib/api/profile'
-import type { UserProfile, UpdateProfileRequest } from '@/lib/types/profile'
+import type { UserProfile, UpdateProfileRequest, MembershipRank } from '@/lib/types/profile'
 
 interface ProfileSettingsTabProps {
   profile?: UserProfile
   email: string
   fullName: string
   onProfileUpdate?: () => void
+}
+
+function getRankColor(rank: MembershipRank): string {
+  switch (rank) {
+    case 'SILVER':
+      return 'text-gray-500'
+    case 'GOLD':
+      return 'text-yellow-500'
+    case 'PLATINUM':
+      return 'text-purple-500'
+    case 'VIP':
+      return 'text-amber-500'
+    default:
+      return 'text-gray-500'
+  }
+}
+
+function getRankBadgeColor(rank: MembershipRank): string {
+  switch (rank) {
+    case 'SILVER':
+      return 'bg-gray-100 text-gray-700 border-gray-300'
+    case 'GOLD':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+    case 'PLATINUM':
+      return 'bg-purple-100 text-purple-700 border-purple-300'
+    case 'VIP':
+      return 'bg-amber-100 text-amber-700 border-amber-300'
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-300'
+  }
 }
 
 export function ProfileSettingsTab({
@@ -151,18 +182,28 @@ export function ProfileSettingsTab({
 
       <Card>
         <CardContent className="px-6 py-2 space-y-6">
-          <div className="flex items-center gap-4">
-            <div className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
-              <span className="text-3xl font-semibold text-primary">
-                {(isEditing ? formData.fullName : fullName).charAt(0).toUpperCase()}
-              </span>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center">
+                <span className="text-3xl font-semibold text-primary">
+                  {(isEditing ? formData.fullName : fullName).charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg text-foreground">
+                  {isEditing ? formData.fullName : fullName}
+                </h3>
+                <p className="text-muted-foreground">{email}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-lg text-foreground">
-                {isEditing ? formData.fullName : fullName}
-              </h3>
-              <p className="text-muted-foreground">{email}</p>
-            </div>
+            {profile?.membershipRank && (
+              <div
+                className={`flex items-center gap-2 px-3 py-1 rounded-full border ${getRankBadgeColor(profile.membershipRank)}`}
+              >
+                <Award className={`h-4 w-4 ${getRankColor(profile.membershipRank)}`} />
+                <span className="text-sm font-medium">{profile.membershipRank}</span>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4">

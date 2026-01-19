@@ -29,6 +29,7 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import type { UserProfile } from '@/lib/types/profile'
 import { getMyProfile } from '@/lib/api/profile'
+import { getDiscountPercentage } from '@/lib/utils'
 import {
   createMemberOrder,
   createPreOrder,
@@ -194,7 +195,16 @@ function CheckoutPage() {
   )
   const deliveryFee = orderType === 'DELIVERY' ? 5.0 : 0
   const tax = subtotal * 0.08
-  const total = subtotal + tax + deliveryFee
+  const beforeDiscountTotal = subtotal + tax + deliveryFee
+  
+  // Calculate discount for authenticated members
+  const discountPercentage = isAuthenticated && userProfile?.membershipRank
+    ? getDiscountPercentage(userProfile.membershipRank)
+    : 0
+  const discountAmount = discountPercentage > 0
+    ? (subtotal + tax + deliveryFee) * (discountPercentage / 100)
+    : 0
+  const total = beforeDiscountTotal - discountAmount
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -749,6 +759,16 @@ function CheckoutPage() {
                           </span>
                           <span className="text-foreground">
                             ${deliveryFee.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <span>
+                            Member Discount ({discountPercentage}%)
+                          </span>
+                          <span className="font-medium">
+                            -${discountAmount.toFixed(2)}
                           </span>
                         </div>
                       )}

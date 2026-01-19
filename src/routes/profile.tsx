@@ -197,8 +197,8 @@ function ProfilePage() {
           firstName={firstName}
           orders={orders}
           isOrdersLoading={isOrdersLoading}
-          loyaltyPoints={1280}
-          nextRewardPoints={2000}
+          loyaltyPoints={profile?.loyaltyPoints ?? 0}
+          membershipRank={profile?.membershipRank ?? 'SILVER'}
         />
       )}
 

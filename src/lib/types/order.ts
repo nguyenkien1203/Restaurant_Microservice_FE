@@ -88,6 +88,12 @@ export interface Order {
   paymentStatus: PaymentStatus
   paymentMethod: PaymentMethod
   totalAmount: number
+  subtotal: number
+  taxAmount: number
+  deliveryFee: number
+  discountAmount?: number
+  discountPercentage?: number
+  membershipRank?: string
   deliveryAddress: string | null
   reservationId: string | null
   driverId: string | null
