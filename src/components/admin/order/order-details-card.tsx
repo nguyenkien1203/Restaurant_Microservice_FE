@@ -7,12 +7,12 @@ import {
   User,
   MapPin,
   CreditCard,
-  Receipt,
   ChevronDown,
   ChevronUp,
   Loader2,
   Mail,
   Phone,
+  CalendarCheck,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -184,6 +184,19 @@ export function OrderDetailsCard({
             </div>
           </div>
         </div>
+
+        {/* Reservation ID - Only for Pre-Orders */}
+        {order.orderType === 'PRE_ORDER' && order.reservationId && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">
+              Reservation ID
+            </h4>
+            <div className="flex items-center gap-2 text-sm">
+              <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+              <span>Reservation #{order.reservationId}</span>
+            </div>
+          </div>
+        )}
 
         {/* Delivery Address */}
         {order.deliveryAddress && (

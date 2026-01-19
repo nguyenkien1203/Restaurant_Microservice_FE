@@ -50,10 +50,6 @@ const orderStatusConfig: Record<OrderStatus, { label: string; color: string }> =
   {
     PENDING: { label: 'Pending', color: 'bg-yellow-500' },
     CONFIRMED: { label: 'Confirmed', color: 'bg-blue-500' },
-    PREPARING: { label: 'Preparing', color: 'bg-orange-500' },
-    READY: { label: 'Ready', color: 'bg-emerald-500' },
-    OUT_FOR_DELIVERY: { label: 'Out for Delivery', color: 'bg-purple-500' },
-    DELIVERED: { label: 'Delivered', color: 'bg-green-500' },
     COMPLETED: { label: 'Completed', color: 'bg-green-500' },
     CANCELLED: { label: 'Cancelled', color: 'bg-red-500' },
   }

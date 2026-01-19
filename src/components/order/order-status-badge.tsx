@@ -2,9 +2,6 @@ import { Badge } from '@/components/ui/badge'
 import {
   Clock,
   CheckCircle2,
-  ChefHat,
-  Truck,
-  Package,
   XCircle,
   CircleDot,
 } from 'lucide-react'
@@ -34,26 +31,6 @@ const statusConfig: Record<
     label: 'Confirmed',
     icon: CheckCircle2,
     className: 'bg-blue-100 text-blue-700 border-blue-200',
-  },
-  PREPARING: {
-    label: 'Preparing',
-    icon: ChefHat,
-    className: 'bg-orange-100 text-orange-700 border-orange-200',
-  },
-  READY: {
-    label: 'Ready',
-    icon: Package,
-    className: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  },
-  OUT_FOR_DELIVERY: {
-    label: 'Out for Delivery',
-    icon: Truck,
-    className: 'bg-purple-100 text-purple-700 border-purple-200',
-  },
-  DELIVERED: {
-    label: 'Delivered',
-    icon: CheckCircle2,
-    className: 'bg-green-100 text-green-700 border-green-200',
   },
   COMPLETED: {
     label: 'Completed',
@@ -90,7 +67,7 @@ export function OrderStatusBadge({
         config.className,
         sizeClasses,
         // Remove hover effects - prevent background color change
-        'hover:!bg-[inherit]',
+        'hover:bg-inherit!',
       )}
     >
       {showIcon && (
