@@ -1,18 +1,19 @@
 import { Link } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarDays, CalendarX2, UtensilsCrossed, Clock, Users, Loader2 } from 'lucide-react'
+import { CalendarDays, CalendarX2, UtensilsCrossed, Clock, Users, Loader2, Award } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { OrderList } from '@/components/order/order-list'
 import type { Order } from '@/lib/types/order'
 import { getMyReservations, formatTime24to12 } from '@/lib/api/reservation'
+import type { MembershipRank } from '@/lib/types/profile'
 
 interface DashboardTabProps {
   firstName: string
   orders: Order[]
   isOrdersLoading: boolean
-  loyaltyPoints?: number
-  nextRewardPoints?: number
+  loyaltyPoints: number
+  membershipRank: MembershipRank
 }
 
 function formatDate(dateString: string): string {
@@ -24,14 +25,107 @@ function formatDate(dateString: string): string {
   })
 }
 
+/**
+ * Calculate the next reward threshold based on membership rank
+ * SILVER: 0-800 → GOLD (800)
+ * GOLD: 800-2000 → PLATINUM (2000)
+ * PLATINUM: 2000-5000 → VIP (5000)
+ * VIP: 5000-10000 (no reset, max 10000)
+ */
+function getNextRewardThreshold(
+  membershipRank: MembershipRank,
+  currentPoints: number
+): { threshold: number; nextRank: MembershipRank | null; message: string } {
+  switch (membershipRank) {
+    case 'SILVER': {
+      const pointsNeeded = Math.max(0, 800 - currentPoints)
+      return {
+        threshold: 800,
+        nextRank: 'GOLD',
+        message: pointsNeeded > 0
+          ? `${pointsNeeded} points away from GOLD membership!`
+          : 'You qualify for GOLD membership!',
+      }
+    }
+    case 'GOLD': {
+      const pointsNeeded = Math.max(0, 2000 - currentPoints)
+      return {
+        threshold: 2000,
+        nextRank: 'PLATINUM',
+        message: pointsNeeded > 0
+          ? `${pointsNeeded} points away from PLATINUM membership!`
+          : 'You qualify for PLATINUM membership!',
+      }
+    }
+    case 'PLATINUM': {
+      const pointsNeeded = Math.max(0, 5000 - currentPoints)
+      return {
+        threshold: 5000,
+        nextRank: 'VIP',
+        message: pointsNeeded > 0
+          ? `${pointsNeeded} points away from VIP membership!`
+          : 'You qualify for VIP membership!',
+      }
+    }
+    case 'VIP':
+      return {
+        threshold: 10000,
+        nextRank: null,
+        message: `You've reached VIP status! Keep earning points for exclusive rewards.`,
+      }
+    default: {
+      const pointsNeeded = Math.max(0, 800 - currentPoints)
+      return {
+        threshold: 800,
+        nextRank: 'GOLD',
+        message: pointsNeeded > 0
+          ? `${pointsNeeded} points away from GOLD membership!`
+          : 'You qualify for GOLD membership!',
+      }
+    }
+  }
+}
+
+function getRankColor(rank: MembershipRank): string {
+  switch (rank) {
+    case 'SILVER':
+      return 'text-gray-500'
+    case 'GOLD':
+      return 'text-yellow-500'
+    case 'PLATINUM':
+      return 'text-purple-500'
+    case 'VIP':
+      return 'text-amber-500'
+    default:
+      return 'text-gray-500'
+  }
+}
+
+function getRankBadgeColor(rank: MembershipRank): string {
+  switch (rank) {
+    case 'SILVER':
+      return 'bg-gray-100 text-gray-700 border-gray-300'
+    case 'GOLD':
+      return 'bg-yellow-100 text-yellow-700 border-yellow-300'
+    case 'PLATINUM':
+      return 'bg-purple-100 text-purple-700 border-purple-300'
+    case 'VIP':
+      return 'bg-amber-100 text-amber-700 border-amber-300'
+    default:
+      return 'bg-gray-100 text-gray-700 border-gray-300'
+  }
+}
+
 export function DashboardTab({
   firstName,
   orders,
   isOrdersLoading,
-  loyaltyPoints = 0,
-  nextRewardPoints = 2000,
+  loyaltyPoints,
+  membershipRank,
 }: DashboardTabProps) {
-  const progressPercentage = (loyaltyPoints / nextRewardPoints) * 100
+  const { threshold: nextRewardThreshold, nextRank, message } =
+    getNextRewardThreshold(membershipRank, loyaltyPoints)
+  const progressPercentage = Math.min((loyaltyPoints / nextRewardThreshold) * 100, 100)
 
   // Fetch reservations
   const {
@@ -73,9 +167,17 @@ export function DashboardTab({
         {/* Loyalty Points Card */}
         <Card>
           <CardContent className="p-6">
-            <h3 className="font-semibold text-foreground mb-4">
-              Loyalty Points
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-foreground">
+                Loyalty Points
+              </h3>
+              <div
+                className={`flex items-center gap-2 px-3 py-1 rounded-full border ${getRankBadgeColor(membershipRank)}`}
+              >
+                <Award className={`h-4 w-4 ${getRankColor(membershipRank)}`} />
+                <span className="text-sm font-medium">{membershipRank}</span>
+              </div>
+            </div>
             <div className="space-y-4">
               <div>
                 <span className="text-4xl font-bold text-primary">
@@ -83,24 +185,42 @@ export function DashboardTab({
                 </span>
                 <span className="text-muted-foreground ml-2">points</span>
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Next Reward</span>
-                  <span className="text-muted-foreground">
-                    {nextRewardPoints.toLocaleString()} pts
-                  </span>
+              {membershipRank !== 'VIP' && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Next Rank: {nextRank}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {nextRewardThreshold.toLocaleString()} pts
+                    </span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${progressPercentage}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">{message}</p>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${progressPercentage}%` }}
-                  />
+              )}
+              {membershipRank === 'VIP' && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Max Points</span>
+                    <span className="text-muted-foreground">
+                      {nextRewardThreshold.toLocaleString()} pts
+                    </span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${progressPercentage}%` }}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">{message}</p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  You're {nextRewardPoints - loyaltyPoints} points away from a
-                  free dessert!
-                </p>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>

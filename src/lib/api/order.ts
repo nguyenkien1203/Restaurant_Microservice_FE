@@ -5,6 +5,7 @@ import type {
   CreatePreOrderRequest,
   CreateDineInOrderRequest,
   CreateGuestOrderRequest,
+  CreateGuestPreOrderRequest,
   Order,
   UpdateOrderStatusRequest,
   UpdatePaymentStatusRequest,
@@ -84,6 +85,30 @@ export async function createGuestOrder(
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}))
     throw new Error(errorData.message || `Failed to create guest order: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+/**
+ * Create a pre-order for guest users linked to a reservation
+ * No authentication required
+ */
+export async function createGuestPreOrder(
+  reservationId: string | number,
+  orderData: CreateGuestPreOrderRequest
+): Promise<Order> {
+  const response = await fetch(API_ENDPOINTS.order.guestPreOrder(reservationId), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(orderData),
+  })
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(errorData.message || `Failed to create guest pre-order: ${response.status}`)
   }
 
   return response.json()
@@ -218,7 +243,7 @@ export async function updateOrderPaymentStatus(
     const errorData = await response.json().catch(() => ({}))
     throw new Error(
       errorData.message ||
-        `Failed to update payment status: ${response.status}`,
+      `Failed to update payment status: ${response.status}`,
     )
   }
 

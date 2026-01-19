@@ -168,14 +168,12 @@ function OrderConfirmationPage() {
   const config = orderTypeConfig[order.orderType]
   const TypeIcon = config?.icon || Package2
 
-  // Calculate subtotal from order items
-  const subtotal = order.orderItems.reduce(
-    (sum, item) => sum + item.subtotal,
-    0,
-  )
-  // Calculate delivery fee and tax from backend total
-  const deliveryFee = order.orderType === 'DELIVERY' ? 5.0 : 0
-  const tax = order.totalAmount - subtotal - deliveryFee
+  // Use values directly from backend
+  const subtotal = order.subtotal
+  const tax = order.taxAmount
+  const deliveryFee = order.deliveryFee
+  const discountAmount = order.discountAmount ?? 0
+  const discountPercentage = order.discountPercentage ?? 0
 
   return (
     <div className="min-h-screen bg-background">
@@ -329,6 +327,18 @@ function OrderConfirmationPage() {
                     <span className="text-muted-foreground">Delivery Fee</span>
                     <span className="text-foreground">
                       ${deliveryFee.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-sm text-green-600">
+                    <span>
+                      Member Discount
+                      {discountPercentage > 0 && ` (${discountPercentage.toFixed(0)}%)`}
+                      {order.membershipRank && ` - ${order.membershipRank}`}
+                    </span>
+                    <span className="font-medium">
+                      -${discountAmount.toFixed(2)}
                     </span>
                   </div>
                 )}

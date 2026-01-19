@@ -1,6 +1,6 @@
 export type OrderType = 'PRE_ORDER' | 'TAKEAWAY' | 'DELIVERY' | 'DINE_IN'
 
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'COMPLETED' | 'CANCELLED'
+export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED'
 
 export type PaymentStatus = 'PENDING' | 'PAID' | 'FAILED' | 'REFUNDED'
 
@@ -26,6 +26,15 @@ export interface CreateMemberOrderRequest {
 export interface CreatePreOrderRequest {
   items: CreateOrderItemRequest[]
   paymentMethod: PaymentMethod
+  notes?: string
+}
+
+export interface CreateGuestPreOrderRequest {
+  items: CreateOrderItemRequest[]
+  paymentMethod: PaymentMethod
+  guestName: string
+  guestEmail: string
+  guestPhone: string
   notes?: string
 }
 
@@ -79,6 +88,12 @@ export interface Order {
   paymentStatus: PaymentStatus
   paymentMethod: PaymentMethod
   totalAmount: number
+  subtotal: number
+  taxAmount: number
+  deliveryFee: number
+  discountAmount?: number
+  discountPercentage?: number
+  membershipRank?: string
   deliveryAddress: string | null
   reservationId: string | null
   driverId: string | null

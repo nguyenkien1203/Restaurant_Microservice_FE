@@ -7,12 +7,12 @@ import {
   User,
   MapPin,
   CreditCard,
-  Receipt,
   ChevronDown,
   ChevronUp,
   Loader2,
   Mail,
   Phone,
+  CalendarCheck,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -112,6 +112,7 @@ export function OrderDetailsCard({
   const TypeIcon = typeConfig?.icon || Package2
   const isMemberOrder = !!order.userId
   const [isUserExpanded, setIsUserExpanded] = useState(false)
+  const [isGuestExpanded, setIsGuestExpanded] = useState(false)
 
   // Fetch user profile when expanded (for member orders)
   const {
@@ -124,17 +125,16 @@ export function OrderDetailsCard({
     enabled: !!order.userId && isUserExpanded,
   })
 
-  const subtotal = order.orderItems.reduce(
-    (sum, item) => sum + item.subtotal,
-    0,
-  )
   const totalItems = order.orderItems.reduce(
     (acc, item) => acc + item.quantity,
     0,
   )
-  // Calculate delivery fee and tax from backend total
-  const deliveryFee = order.orderType === 'DELIVERY' ? 5.0 : 0
-  const tax = order.totalAmount - subtotal - deliveryFee
+  // Use values directly from backend
+  const subtotal = order.subtotal
+  const tax = order.taxAmount
+  const deliveryFee = order.deliveryFee
+  const discountAmount = order.discountAmount ?? 0
+  const discountPercentage = order.discountPercentage ?? 0
 
   const handleStatusUpdate = async (
     newStatus: OrderStatus,
@@ -183,6 +183,19 @@ export function OrderDetailsCard({
             </div>
           </div>
         </div>
+
+        {/* Reservation ID - Only for Pre-Orders */}
+        {order.orderType === 'PRE_ORDER' && order.reservationId && (
+          <div className="space-y-2">
+            <h4 className="text-sm font-medium text-foreground">
+              Reservation ID
+            </h4>
+            <div className="flex items-center gap-2 text-sm">
+              <CalendarCheck className="h-4 w-4 text-muted-foreground" />
+              <span>Reservation #{order.reservationId}</span>
+            </div>
+          </div>
+        )}
 
         {/* Delivery Address */}
         {order.deliveryAddress && (
@@ -261,6 +274,18 @@ export function OrderDetailsCard({
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Delivery Fee</span>
               <span className="text-foreground">${deliveryFee.toFixed(2)}</span>
+            </div>
+          )}
+          {discountAmount > 0 && (
+            <div className="flex justify-between text-sm text-green-600">
+              <span>
+                Member Discount
+                {discountPercentage > 0 && ` (${discountPercentage.toFixed(0)}%)`}
+                {order.membershipRank && ` - ${order.membershipRank}`}
+              </span>
+              <span className="font-medium">
+                -${discountAmount.toFixed(2)}
+              </span>
             </div>
           )}
           <div className="flex justify-between font-semibold text-lg pt-2 border-t">
@@ -374,30 +399,54 @@ export function OrderDetailsCard({
               )}
             </div>
           ) : (
-            /* Guest Info (non-member) */
+            /* Guest Info (non-member) - Expandable */
             (order.guestName || order.guestEmail || order.guestPhone) && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-foreground">Guest</h4>
-                <div className="grid gap-2">
-                  {order.guestName && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{order.guestName}</span>
-                    </div>
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-between"
+                  onClick={() => setIsGuestExpanded(!isGuestExpanded)}
+                >
+                  <span className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Guest
+                  </span>
+                  {isGuestExpanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
                   )}
-                  {order.guestEmail && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{order.guestEmail}</span>
-                    </div>
-                  )}
-                  {order.guestPhone && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{order.guestPhone}</span>
-                    </div>
-                  )}
-                </div>
+                </Button>
+
+                {isGuestExpanded && (
+                  <div className="border border-border rounded-lg p-3 space-y-3 bg-muted/30">
+                    {/* Guest Name */}
+                    {order.guestName && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">
+                          {order.guestName}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Email */}
+                    {order.guestEmail && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{order.guestEmail}</span>
+                      </div>
+                    )}
+
+                    {/* Phone */}
+                    {order.guestPhone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{order.guestPhone}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )
           )}

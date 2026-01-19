@@ -63,6 +63,7 @@ export function ReservationDetailsCard({
   const status = reservation.status as ReservationStatus
   const [isPreOrderExpanded, setIsPreOrderExpanded] = useState(false)
   const [isUserExpanded, setIsUserExpanded] = useState(false)
+  const [isGuestExpanded, setIsGuestExpanded] = useState(false)
 
   const handleStatusUpdate = async (newStatus: ReservationStatus) => {
     if (onStatusUpdate) {
@@ -241,33 +242,57 @@ export function ReservationDetailsCard({
           </div>
         )}
 
-        {/* Guest Info (non-member) */}
+        {/* Guest Info (non-member) - Expandable */}
         {!reservation.userId &&
           (reservation.guestName ||
             reservation.guestEmail ||
             reservation.guestPhone) && (
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-foreground">Guest</h4>
-              <div className="grid gap-2">
-                {reservation.guestName && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span>{reservation.guestName}</span>
-                  </div>
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-between"
+                onClick={() => setIsGuestExpanded(!isGuestExpanded)}
+              >
+                <span className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Guest
+                </span>
+                {isGuestExpanded ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
                 )}
-                {reservation.guestEmail && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span>{reservation.guestEmail}</span>
-                  </div>
-                )}
-                {reservation.guestPhone && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{reservation.guestPhone}</span>
-                  </div>
-                )}
-              </div>
+              </Button>
+
+              {isGuestExpanded && (
+                <div className="border border-border rounded-lg p-3 space-y-3 bg-muted/30">
+                  {/* Guest Name */}
+                  {reservation.guestName && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">
+                        {reservation.guestName}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Email */}
+                  {reservation.guestEmail && (
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{reservation.guestEmail}</span>
+                    </div>
+                  )}
+
+                  {/* Phone */}
+                  {reservation.guestPhone && (
+                    <div className="flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{reservation.guestPhone}</span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -326,7 +351,7 @@ export function ReservationDetailsCard({
                             ? 'bg-green-100 text-green-700'
                             : preOrder.status === 'PENDING'
                               ? 'bg-yellow-100 text-yellow-700'
-                              : preOrder.status === 'PREPARING'
+                              : preOrder.status === 'CONFIRMED'
                                 ? 'bg-blue-100 text-blue-700'
                                 : 'bg-gray-100 text-gray-700'
                         }`}

@@ -357,10 +357,6 @@ function AdminOrders() {
   const orderStatuses = [
     'PENDING',
     'CONFIRMED',
-    'PREPARING',
-    'READY',
-    'OUT_FOR_DELIVERY',
-    'DELIVERED',
     'COMPLETED',
     'CANCELLED',
   ] as const

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import type { OrderStatus, PaymentStatus } from '@/lib/types/order'
 
@@ -142,26 +142,6 @@ const orderStatusConfig: Record<OrderStatus, StatusConfig> = {
     color: 'text-blue-700',
     bgColor: 'bg-blue-100 hover:bg-blue-200',
   },
-  PREPARING: {
-    label: 'Preparing',
-    color: 'text-orange-700',
-    bgColor: 'bg-orange-100 hover:bg-orange-200',
-  },
-  READY: {
-    label: 'Ready',
-    color: 'text-blue-700',
-    bgColor: 'bg-blue-100 hover:bg-blue-200',
-  },
-  OUT_FOR_DELIVERY: {
-    label: 'Out for Delivery',
-    color: 'text-purple-700',
-    bgColor: 'bg-purple-100 hover:bg-purple-200',
-  },
-  DELIVERED: {
-    label: 'Delivered',
-    color: 'text-emerald-700',
-    bgColor: 'bg-emerald-100 hover:bg-emerald-200',
-  },
   COMPLETED: {
     label: 'Completed',
     color: 'text-green-700',
@@ -177,16 +157,15 @@ const orderStatusConfig: Record<OrderStatus, StatusConfig> = {
 const orderStatuses: readonly OrderStatus[] = [
   'PENDING',
   'CONFIRMED',
-  'PREPARING',
-  'READY',
-  'OUT_FOR_DELIVERY',
-  'DELIVERED',
   'COMPLETED',
   'CANCELLED',
 ] as const
 
 /**
  * Valid next statuses for order status
+ * PENDING -> CONFIRMED | CANCELLED
+ * CONFIRMED -> COMPLETED | CANCELLED
+ * COMPLETED, CANCELLED -> (terminal states, no transitions)
  */
 function getOrderValidNextStatuses(
   currentStatus: OrderStatus,
@@ -195,14 +174,7 @@ function getOrderValidNextStatuses(
     case 'PENDING':
       return ['CONFIRMED', 'CANCELLED']
     case 'CONFIRMED':
-      return ['PREPARING', 'CANCELLED']
-    case 'PREPARING':
-      return ['READY', 'CANCELLED']
-    case 'READY':
-      return ['OUT_FOR_DELIVERY', 'COMPLETED']
-    case 'OUT_FOR_DELIVERY':
-      return ['DELIVERED']
-    case 'DELIVERED':
+      return ['COMPLETED', 'CANCELLED']
     case 'COMPLETED':
     case 'CANCELLED':
       return [] // Terminal states - no transitions allowed

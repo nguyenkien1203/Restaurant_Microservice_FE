@@ -29,16 +29,19 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import type { UserProfile } from '@/lib/types/profile'
 import { getMyProfile } from '@/lib/api/profile'
+import { getDiscountPercentage } from '@/lib/utils'
 import {
   createMemberOrder,
   createPreOrder,
   createGuestOrder,
+  createGuestPreOrder,
 } from '@/lib/api/order'
 import type {
   CreateMemberOrderRequest,
   CreateOrderItemRequest,
   CreatePreOrderRequest,
   CreateGuestOrderRequest,
+  CreateGuestPreOrderRequest,
   Order,
 } from '@/lib/types/order'
 
@@ -192,7 +195,16 @@ function CheckoutPage() {
   )
   const deliveryFee = orderType === 'DELIVERY' ? 5.0 : 0
   const tax = subtotal * 0.08
-  const total = subtotal + tax + deliveryFee
+  const beforeDiscountTotal = subtotal + tax + deliveryFee
+  
+  // Calculate discount for authenticated members
+  const discountPercentage = isAuthenticated && userProfile?.membershipRank
+    ? getDiscountPercentage(userProfile.membershipRank)
+    : 0
+  const discountAmount = discountPercentage > 0
+    ? (subtotal + tax + deliveryFee) * (discountPercentage / 100)
+    : 0
+  const total = beforeDiscountTotal - discountAmount
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -228,43 +240,55 @@ function CheckoutPage() {
 
       if (!isAuthenticated) {
         // Guest order creation
-        // TODO: Implement guest pre-order endpoint that doesn't require credentials.
-        if (orderType === 'PRE_ORDER') {
+        if (orderType === 'PRE_ORDER' && reservationId) {
+          // Guest pre-order linked to a reservation
+          const guestPreOrderRequest: CreateGuestPreOrderRequest = {
+            items: orderItems,
+            paymentMethod: 'CASH',
+            guestName: formData.fullName,
+            guestEmail: formData.email,
+            guestPhone: formData.phone,
+            notes: formData.notes || undefined,
+          }
+
+          createdOrder = await createGuestPreOrder(reservationId, guestPreOrderRequest)
+          console.log('Guest pre-order created:', createdOrder)
+        } else if (orderType === 'PRE_ORDER' && !reservationId) {
           setError(
-            'Pre-orders for guests are not yet available. Please log in to create a pre-order.',
+            'Reservation ID is required for pre-orders. Please make a reservation first.',
           )
           setIsProcessing(false)
           return
-        }
-
-        // Guest can create TAKEAWAY or DELIVERY orders
-        const guestOrderRequest: CreateGuestOrderRequest = {
-          orderType: orderType,
-          items: orderItems,
-          paymentMethod: 'CASH',
-          guestName: formData.fullName,
-          guestEmail: formData.email,
-          guestPhone: formData.phone,
-          notes: formData.notes || undefined,
-        }
-
-        // Add delivery address for delivery orders
-        if (orderType === 'DELIVERY' && formData.address) {
-          guestOrderRequest.deliveryAddress = formData.address
-        }
-
-        // Add estimated pickup time for takeaway orders
-        if (orderType === 'TAKEAWAY' && formData.pickupTime) {
-          const selectedOption = pickupTimeOptions.find(
-            (opt) => opt.value === formData.pickupTime,
-          )
-          if (selectedOption) {
-            guestOrderRequest.estimatedPickupTime = selectedOption.datetime
+        } else {
+          // Guest can create TAKEAWAY or DELIVERY orders
+          const guestOrderRequest: CreateGuestOrderRequest = {
+            orderType: orderType,
+            items: orderItems,
+            paymentMethod: 'CASH',
+            guestName: formData.fullName,
+            guestEmail: formData.email,
+            guestPhone: formData.phone,
+            notes: formData.notes || undefined,
           }
-        }
 
-        createdOrder = await createGuestOrder(guestOrderRequest)
-        console.log('Guest order created:', createdOrder)
+          // Add delivery address for delivery orders
+          if (orderType === 'DELIVERY' && formData.address) {
+            guestOrderRequest.deliveryAddress = formData.address
+          }
+
+          // Add estimated pickup time for takeaway orders
+          if (orderType === 'TAKEAWAY' && formData.pickupTime) {
+            const selectedOption = pickupTimeOptions.find(
+              (opt) => opt.value === formData.pickupTime,
+            )
+            if (selectedOption) {
+              guestOrderRequest.estimatedPickupTime = selectedOption.datetime
+            }
+          }
+
+          createdOrder = await createGuestOrder(guestOrderRequest)
+          console.log('Guest order created:', createdOrder)
+        }
       } else {
         // Authenticated user order creation
         // Check if this is a pre-order (has reservationId and is PRE_ORDER type)
@@ -735,6 +759,16 @@ function CheckoutPage() {
                           </span>
                           <span className="text-foreground">
                             ${deliveryFee.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {discountAmount > 0 && (
+                        <div className="flex justify-between text-sm text-green-600">
+                          <span>
+                            Member Discount ({discountPercentage}%)
+                          </span>
+                          <span className="font-medium">
+                            -${discountAmount.toFixed(2)}
                           </span>
                         </div>
                       )}

@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   X,
+  User,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { FilterDropdown, FilterDropdownHeader } from '../filter-dropdown'
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import type { ReservationStatus } from './reservation-row'
 
 export type ReservationStatusFilter = 'all' | ReservationStatus
+export type CustomerTypeFilter = 'all' | 'member' | 'guest'
 
 interface ReservationFiltersProps {
   searchQuery: string
@@ -21,6 +23,8 @@ interface ReservationFiltersProps {
   onStatusChange: (status: ReservationStatusFilter) => void
   dateFilter: string
   onDateChange: (date: string) => void
+  customerTypeFilter: CustomerTypeFilter
+  onCustomerTypeChange: (type: CustomerTypeFilter) => void
 }
 
 const reservationStatusConfig: Record<
@@ -42,6 +46,8 @@ export function ReservationFilters({
   onStatusChange,
   dateFilter,
   onDateChange,
+  customerTypeFilter,
+  onCustomerTypeChange,
 }: ReservationFiltersProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-3">
@@ -88,6 +94,35 @@ export function ReservationFilters({
                       : 'bg-transparent border border-border',
                   )}
                 />
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </FilterDropdown>
+
+        {/* Customer Type Filter */}
+        <FilterDropdown
+          label="Customer"
+          icon={<User className="h-4 w-4" />}
+          hasActiveFilters={customerTypeFilter !== 'all'}
+        >
+          <FilterDropdownHeader>Customer Type</FilterDropdownHeader>
+          <div>
+            {[
+              { value: 'all', label: 'All Customers' },
+              { value: 'member', label: 'Member' },
+              { value: 'guest', label: 'Guest' },
+            ].map((option) => (
+              <button
+                key={option.value}
+                onClick={() =>
+                  onCustomerTypeChange(option.value as CustomerTypeFilter)
+                }
+                className={cn(
+                  'w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent text-left',
+                  customerTypeFilter === option.value && 'bg-accent',
+                )}
+              >
                 {option.label}
               </button>
             ))}

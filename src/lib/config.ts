@@ -29,6 +29,7 @@ export const API_ENDPOINTS = {
   },
   order: {
     guestCreate: `${API_BASE_URL}/api/orders/guest`,
+    guestPreOrder: (reservationId: string | number) => `${API_BASE_URL}/api/orders/guest/pre-order/${reservationId}`,
     memberCreate: `${API_BASE_URL}/api/orders`,
     preOrder: (reservationId: string | number) => `${API_BASE_URL}/api/orders/pre-order/${reservationId}`,
     myOrders: `${API_BASE_URL}/api/orders/my-orders`,
