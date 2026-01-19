@@ -46,12 +46,22 @@ function CircularProgress({ value, total, color, label }: ChartItemProps) {
   )
 }
 
-export function SalesChart() {
+interface SalesChartProps {
+  dineIn: number
+  takeaway: number
+  delivery: number
+  preOrder: number
+  total: number
+  isLoading?: boolean
+}
+
+export function SalesChart({ dineIn, takeaway, delivery, preOrder, total, isLoading }: SalesChartProps) {
   const data = [
-    { label: "Dine-in", value: 65, total: 100, color: "#22c55e" },
-    { label: "Takeaway", value: 25, total: 100, color: "#f97316" },
-    { label: "Delivery", value: 10, total: 100, color: "#3b82f6" },
-  ]
+    { label: "Dine-in", value: dineIn, total: total || 1, color: "#22c55e" },
+    { label: "Takeaway", value: takeaway, total: total || 1, color: "#f97316" },
+    { label: "Delivery", value: delivery, total: total || 1, color: "#3b82f6" },
+    { label: "Pre-order", value: preOrder, total: total || 1, color: "#a855f7" },
+  ].filter((item) => item.value > 0) // Only show channels with orders
 
   return (
     <Card className="bg-card">
@@ -59,11 +69,26 @@ export function SalesChart() {
         <CardTitle className="text-lg text-card-foreground">Sales by Channel</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-around">
-          {data.map((item) => (
-            <CircularProgress key={item.label} {...item} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="flex justify-around">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex flex-col items-center gap-2">
+                <div className="w-24 h-24 bg-muted animate-pulse rounded-full" />
+                <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+              </div>
+            ))}
+          </div>
+        ) : data.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No orders yet
+          </div>
+        ) : (
+          <div className="flex justify-around">
+            {data.map((item) => (
+              <CircularProgress key={item.label} {...item} />
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

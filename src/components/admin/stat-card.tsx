@@ -1,5 +1,5 @@
 import type React from "react"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 interface StatCardProps {
@@ -8,19 +8,24 @@ interface StatCardProps {
   change?: string
   changeType?: "positive" | "negative" | "neutral"
   icon?: React.ReactNode
+  isLoading?: boolean
 }
 
-export function StatCard({ title, value, change, changeType = "neutral", icon }: StatCardProps) {
+export function StatCard({ title, value, change, changeType = "neutral", icon, isLoading }: StatCardProps) {
   return (
     <Card className="bg-card">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-muted-foreground">{title}</span>
-          {icon && <div className="text-muted-foreground">{icon}</div>}
-        </div>
-        <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold text-card-foreground">{value}</span>
-          {change && (
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle className="text-lg text-card-foreground">{title}</CardTitle>
+        {icon && <div className="text-muted-foreground">{icon}</div>}
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-end justify-between gap-2">
+          {isLoading ? (
+            <div className="h-8 w-24 bg-muted animate-pulse rounded" />
+          ) : (
+            <span className="text-3xl font-bold text-card-foreground">{value}</span>
+          )}
+          {change && !isLoading && (
             <span
               className={cn(
                 "text-xs mb-1",

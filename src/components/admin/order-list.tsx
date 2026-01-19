@@ -1,23 +1,56 @@
 import { Link } from "@tanstack/react-router"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import type { Order } from "@/lib/types/order"
+import { cn } from "@/lib/utils"
 
-const orders = [
-  { id: "#1234", customer: "Table 5", items: 3, total: "$45.50", status: "preparing", time: "10 min ago" },
-  { id: "#1235", customer: "Takeaway", items: 2, total: "$28.00", status: "ready", time: "15 min ago" },
-  { id: "#1236", customer: "Table 12", items: 5, total: "$89.00", status: "served", time: "25 min ago" },
-  { id: "#1237", customer: "Table 3", items: 4, total: "$62.00", status: "preparing", time: "5 min ago" },
-  { id: "#1238", customer: "Delivery", items: 2, total: "$35.00", status: "pending", time: "2 min ago" },
-]
-
-const statusColors: Record<string, string> = {
-  pending: "bg-yellow-100 text-yellow-800",
-  preparing: "bg-blue-100 text-blue-800",
-  ready: "bg-green-100 text-green-800",
-  served: "bg-gray-100 text-gray-800",
+interface OrderListProps {
+  orders: Order[]
+  isLoading?: boolean
 }
 
-export function OrderList() {
+const statusColors: Record<string, string> = {
+  PENDING: "bg-yellow-100 text-yellow-800",
+  CONFIRMED: "bg-blue-100 text-blue-800",
+  PREPARING: "bg-orange-100 text-orange-800",
+  READY: "bg-orange-100 text-orange-800",
+  OUT_FOR_DELIVERY: "bg-purple-100 text-purple-800",
+  DELIVERED: "bg-gray-100 text-gray-800",
+  COMPLETED: "bg-green-100 text-green-800",
+  CANCELLED: "bg-red-100 text-red-800",
+}
+
+function formatTimeAgo(dateString: string | undefined): string {
+  if (!dateString) return "Unknown"
+  
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  
+  if (diffInSeconds < 60) return `${diffInSeconds} sec ago`
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} min ago`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hr ago`
+  return `${Math.floor(diffInSeconds / 86400)} days ago`
+}
+
+function getCustomerLabel(order: Order): string {
+  if (order.orderType === "DINE_IN") {
+    return order.reservationId ? `Table ${order.reservationId}` : "Dine-in"
+  }
+  if (order.orderType === "TAKEAWAY") return "Takeaway"
+  if (order.orderType === "DELIVERY") return "Delivery"
+  if (order.orderType === "PRE_ORDER") return "Pre-order"
+  return order.guestName || order.guestEmail || "Customer"
+}
+
+function formatStatus(status: string): string {
+  return status
+    .split("_")
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(" ")
+}
+
+export function OrderList({ orders, isLoading }: OrderListProps) {
   return (
     <Card className="bg-card">
       <CardHeader className="flex flex-row items-center justify-between">
@@ -27,24 +60,54 @@ export function OrderList() {
         </Link>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {orders.map((order) => (
-            <div key={order.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-              <div className="flex items-center gap-4">
-                <span className="font-medium text-card-foreground">{order.id}</span>
-                <span className="text-sm text-muted-foreground">{order.customer}</span>
+        {isLoading ? (
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-4">
+                  <div className="h-5 w-16 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-4 w-12 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-16 bg-muted animate-pulse rounded" />
+                  <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+                  <div className="h-3 w-16 bg-muted animate-pulse rounded" />
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground">{order.items} items</span>
-                <span className="font-medium text-card-foreground">{order.total}</span>
-                <Badge className={statusColors[order.status]} variant="secondary">
-                  {order.status}
-                </Badge>
-                <span className="text-xs text-muted-foreground">{order.time}</span>
+            ))}
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No recent orders
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {orders.map((order) => (
+              <div key={order.id} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <span className="font-medium text-card-foreground">#{order.id}</span>
+                  <span className="text-sm text-muted-foreground">{getCustomerLabel(order)}</span>
+                  <span className="text-sm text-muted-foreground">{order.orderItems.length} item{order.orderItems.length !== 1 ? 's' : ''}</span>
+                  <span className="font-medium text-card-foreground">
+                    ${order.totalAmount.toFixed(2)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-8">
+                  <Badge 
+                    className={cn(statusColors[order.status], "pointer-events-none hover:none")} 
+                    variant="secondary"
+                  >
+                    {formatStatus(order.status)}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {formatTimeAgo(order.createdAt)}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )
