@@ -53,6 +53,10 @@ export interface UpdateOrderStatusRequest {
   reason?: string
 }
 
+export interface UpdatePaymentStatusRequest {
+  newPaymentStatus: PaymentStatus
+}
+
 // Response types
 export interface OrderItem {
   id: number

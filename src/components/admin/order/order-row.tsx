@@ -1,9 +1,16 @@
 import { TableCell, TableRow } from '@/components/ui/table'
-import { Badge } from '@/components/ui/badge'
 import { Package2, Handbag, Clock, UtensilsCrossed } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { Order, OrderType, OrderStatus } from '@/lib/types/order'
-import { StatusUpdateDropdown } from './status-update-dropdown'
+import type {
+  Order,
+  OrderType,
+  OrderStatus,
+  PaymentStatus,
+} from '@/lib/types/order'
+import {
+  OrderStatusDropdown,
+  PaymentStatusDropdown,
+} from './status-update-dropdown'
 
 interface OrderRowProps {
   order: Order
@@ -15,6 +22,11 @@ interface OrderRowProps {
     reason?: string,
   ) => Promise<void>
   isUpdatingStatus?: boolean
+  onPaymentStatusUpdate?: (
+    orderId: number,
+    newStatus: PaymentStatus,
+  ) => Promise<void>
+  isUpdatingPaymentStatus?: boolean
 }
 
 const orderTypeConfig: Record<
@@ -60,6 +72,8 @@ export function OrderRow({
   onSelect,
   onStatusUpdate,
   isUpdatingStatus = false,
+  onPaymentStatusUpdate,
+  isUpdatingPaymentStatus = false,
 }: OrderRowProps) {
   const typeConfig = orderTypeConfig[order.orderType]
   const isMemberOrder = !!order.userId
@@ -83,6 +97,12 @@ export function OrderRow({
   ) => {
     if (onStatusUpdate) {
       await onStatusUpdate(order.id, newStatus, reason)
+    }
+  }
+
+  const handlePaymentStatusUpdate = async (newStatus: PaymentStatus) => {
+    if (onPaymentStatusUpdate) {
+      await onPaymentStatusUpdate(order.id, newStatus)
     }
   }
 
@@ -140,27 +160,20 @@ export function OrderRow({
         <span className="text-foreground">${order.totalAmount.toFixed(2)}</span>
       </TableCell>
       <TableCell onClick={(e) => e.stopPropagation()}>
-        <StatusUpdateDropdown
+        <OrderStatusDropdown
           currentStatus={order.status}
           onStatusUpdate={handleStatusUpdate}
           isUpdatingStatus={isUpdatingStatus}
           size="sm"
         />
       </TableCell>
-      <TableCell>
-        <Badge
-          variant="outline"
-          className={cn(
-            'text-xs',
-            order.paymentStatus === 'PAID'
-              ? 'border-green-200 text-green-700 bg-green-50'
-              : order.paymentStatus === 'PENDING'
-                ? 'border-yellow-200 text-yellow-700 bg-yellow-50'
-                : 'border-red-200 text-red-700 bg-red-50',
-          )}
-        >
-          {order.paymentStatus}
-        </Badge>
+      <TableCell onClick={(e) => e.stopPropagation()}>
+        <PaymentStatusDropdown
+          currentStatus={order.paymentStatus}
+          onStatusUpdate={handlePaymentStatusUpdate}
+          isUpdatingStatus={isUpdatingPaymentStatus}
+          size="sm"
+        />
       </TableCell>
     </TableRow>
   )

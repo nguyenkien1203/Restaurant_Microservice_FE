@@ -13,8 +13,9 @@ import {
   getAdminOrders,
   updateOrderStatus,
   createDineInOrder,
+  updateOrderPaymentStatus,
 } from '@/lib/api/order'
-import type { OrderType, OrderStatus } from '@/lib/types/order'
+import type { OrderType, OrderStatus, PaymentStatus } from '@/lib/types/order'
 import type { CreateDineInOrderRequest } from '@/lib/types/order'
 import { cn } from '@/lib/utils'
 import {
@@ -171,6 +172,39 @@ function AdminOrders() {
     reason?: string,
   ) => {
     await updateStatusMutation.mutateAsync({ orderId, newStatus, reason })
+  }
+
+  const updatePaymentStatusMutation = useMutation({
+    mutationFn: ({
+      orderId,
+      newPaymentStatus,
+    }: {
+      orderId: number
+      newPaymentStatus: PaymentStatus
+    }) => updateOrderPaymentStatus(orderId, { newPaymentStatus }),
+    onSuccess: (updatedOrder) => {
+      // Update the orders list
+      queryClient.setQueryData<Order[]>(['adminOrders'], (oldOrders) => {
+        if (!oldOrders) return [updatedOrder]
+        return oldOrders.map((order) =>
+          order.id === updatedOrder.id ? updatedOrder : order,
+        )
+      })
+      // Update selected order if it's the one being updated
+      if (selectedOrder?.id === updatedOrder.id) {
+        setSelectedOrder(updatedOrder)
+      }
+    },
+  })
+
+  const handlePaymentStatusUpdate = async (
+    orderId: number,
+    newStatus: PaymentStatus,
+  ) => {
+    await updatePaymentStatusMutation.mutateAsync({
+      orderId,
+      newPaymentStatus: newStatus,
+    })
   }
 
   const createDineInMutation = useMutation({
@@ -488,6 +522,10 @@ function AdminOrders() {
                         }
                         onStatusUpdate={handleStatusUpdate}
                         isUpdatingStatus={updateStatusMutation.isPending}
+                        onPaymentStatusUpdate={handlePaymentStatusUpdate}
+                        isUpdatingPaymentStatus={
+                          updatePaymentStatusMutation.isPending
+                        }
                       />
                     ))}
                   </TableBody>
@@ -505,6 +543,8 @@ function AdminOrders() {
               onClose={() => setSelectedOrder(null)}
               onStatusUpdate={handleStatusUpdate}
               isUpdatingStatus={updateStatusMutation.isPending}
+              onPaymentStatusUpdate={handlePaymentStatusUpdate}
+              isUpdatingPaymentStatus={updatePaymentStatusMutation.isPending}
             />
           </div>
         )}

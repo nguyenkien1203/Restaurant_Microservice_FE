@@ -1,24 +1,137 @@
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
-import type { OrderStatus } from '@/lib/types/order'
+import type { OrderStatus, PaymentStatus } from '@/lib/types/order'
 
-interface StatusUpdateDropdownProps {
-  currentStatus: OrderStatus
-  onStatusUpdate?: (
-    newStatus: OrderStatus,
-    reason?: string,
-  ) => Promise<void>
+type StatusUnion = OrderStatus | PaymentStatus
+
+interface StatusConfig {
+  label: string
+  color: string
+  bgColor: string
+}
+
+interface BaseStatusDropdownProps<T extends StatusUnion> {
+  currentStatus: T
+  allStatuses: readonly T[]
+  config: Record<T, StatusConfig>
+  getValidNextStatuses?: (currentStatus: T) => readonly T[]
+  onStatusUpdate?: (newStatus: T, reason?: string) => Promise<void>
   isUpdatingStatus?: boolean
   size?: 'sm' | 'md'
 }
 
-const statusConfig: Record<
-  OrderStatus,
-  { label: string; color: string; bgColor: string }
-> = {
+function StatusDropdownBase<T extends StatusUnion>({
+  currentStatus,
+  allStatuses,
+  config: statusConfig,
+  getValidNextStatuses,
+  onStatusUpdate,
+  isUpdatingStatus = false,
+  size = 'sm',
+}: BaseStatusDropdownProps<T>) {
+  const [isOpen, setIsOpen] = useState(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const config = statusConfig[currentStatus]
+  const validNextStatuses = getValidNextStatuses?.(currentStatus) ?? allStatuses
+
+  const handleStatusClick = async (newStatus: T) => {
+    if (newStatus === currentStatus) {
+      setIsOpen(false)
+      return
+    }
+    // Don't allow invalid transitions
+    if (!validNextStatuses.includes(newStatus)) {
+      return
+    }
+    if (onStatusUpdate) {
+      await onStatusUpdate(newStatus)
+    }
+    setIsOpen(false)
+  }
+
+  if (!onStatusUpdate) {
+    // Read-only badge
+    return (
+      <span
+        className={cn(
+          'text-xs font-medium px-2 py-0.5 rounded',
+          config.bgColor,
+          config.color,
+        )}
+      >
+        {config.label}
+      </span>
+    )
+  }
+
+  return (
+    <div className="relative">
+      <Button
+        ref={buttonRef}
+        variant="ghost"
+        // Map custom size to button size props (we only use 'sm' vs default)
+        size={size === 'sm' ? 'sm' : 'default'}
+        onClick={() => setIsOpen((prev) => !prev)}
+        disabled={isUpdatingStatus}
+        className={cn('text-xs px-2 py-1 h-auto', config.bgColor, config.color)}
+      >
+        {isUpdatingStatus ? (
+          <Loader2 className="h-3 w-3 animate-spin mr-1" />
+        ) : null}
+        {config.label}
+      </Button>
+
+      {isOpen && (
+        <div
+          className={cn(
+            'absolute left-0 mt-2 z-50 bg-popover border border-border rounded-md shadow-lg min-w-[160px]',
+          )}
+          style={{ minWidth: buttonRef.current?.offsetWidth }}
+        >
+          {allStatuses.map((status) => {
+            const statusConf = statusConfig[status]
+            const isValid =
+              validNextStatuses.includes(status) || status === currentStatus
+            const isDisabled = !isValid
+
+            return (
+              <button
+                key={status}
+                onClick={() => handleStatusClick(status)}
+                disabled={isDisabled}
+                className={cn(
+                  'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
+                  status === currentStatus && 'bg-accent',
+                  isDisabled
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-accent cursor-pointer',
+                )}
+              >
+                <span
+                  className={cn(
+                    'h-2 w-2 rounded-full',
+                    status === currentStatus
+                      ? statusConf.bgColor.split(' ')[0]
+                      : isDisabled
+                        ? 'bg-transparent border border-muted-foreground/30'
+                        : 'bg-transparent border border-border',
+                  )}
+                />
+                {statusConf.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ===== Order Status Dropdown (uses base component) =====
+
+const orderStatusConfig: Record<OrderStatus, StatusConfig> = {
   PENDING: {
     label: 'Pending',
     color: 'text-yellow-700',
@@ -26,8 +139,8 @@ const statusConfig: Record<
   },
   CONFIRMED: {
     label: 'Confirmed',
-    color: 'text-green-700',
-    bgColor: 'bg-green-100 hover:bg-green-200',
+    color: 'text-blue-700',
+    bgColor: 'bg-blue-100 hover:bg-blue-200',
   },
   PREPARING: {
     label: 'Preparing',
@@ -51,8 +164,8 @@ const statusConfig: Record<
   },
   COMPLETED: {
     label: 'Completed',
-    color: 'text-teal-700',
-    bgColor: 'bg-teal-100 hover:bg-teal-200',
+    color: 'text-green-700',
+    bgColor: 'bg-green-100 hover:bg-green-200',
   },
   CANCELLED: {
     label: 'Cancelled',
@@ -61,7 +174,7 @@ const statusConfig: Record<
   },
 }
 
-const allStatuses: OrderStatus[] = [
+const orderStatuses: readonly OrderStatus[] = [
   'PENDING',
   'CONFIRMED',
   'PREPARING',
@@ -70,19 +183,14 @@ const allStatuses: OrderStatus[] = [
   'DELIVERED',
   'COMPLETED',
   'CANCELLED',
-]
+] as const
 
 /**
- * Get valid next statuses based on current status
- * Based on backend validation logic:
- * - PENDING -> CONFIRMED, CANCELLED
- * - CONFIRMED -> PREPARING, CANCELLED
- * - PREPARING -> READY, CANCELLED
- * - READY -> OUT_FOR_DELIVERY, COMPLETED
- * - OUT_FOR_DELIVERY -> DELIVERED
- * - DELIVERED, COMPLETED, CANCELLED -> no transitions (terminal states)
+ * Valid next statuses for order status
  */
-function getValidNextStatuses(currentStatus: OrderStatus): OrderStatus[] {
+function getOrderValidNextStatuses(
+  currentStatus: OrderStatus,
+): readonly OrderStatus[] {
   switch (currentStatus) {
     case 'PENDING':
       return ['CONFIRMED', 'CANCELLED']
@@ -103,168 +211,101 @@ function getValidNextStatuses(currentStatus: OrderStatus): OrderStatus[] {
   }
 }
 
-export function StatusUpdateDropdown({
-  currentStatus,
-  onStatusUpdate,
-  isUpdatingStatus = false,
-  size = 'sm',
-}: StatusUpdateDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [openUpward, setOpenUpward] = useState(false)
-  const [dropdownPosition, setDropdownPosition] = useState<{
-    top: number
-    left: number
-    width: number
-  } | null>(null)
-  const buttonRef = useRef<HTMLButtonElement>(null)
-  const config = statusConfig[currentStatus]
-  const validNextStatuses = getValidNextStatuses(currentStatus)
+export interface OrderStatusDropdownProps {
+  currentStatus: OrderStatus
+  onStatusUpdate?: (newStatus: OrderStatus, reason?: string) => Promise<void>
+  isUpdatingStatus?: boolean
+  size?: 'sm' | 'md'
+}
 
-  // Calculate dropdown position relative to viewport so it can render outside the table
-  const updateDropdownPosition = () => {
-    if (!buttonRef.current) return
-    const buttonRect = buttonRef.current.getBoundingClientRect()
-    const viewportHeight = window.innerHeight
-    const spaceBelow = viewportHeight - buttonRect.bottom
-    const spaceAbove = buttonRect.top
-    const dropdownHeight = 260 // Approximate dropdown height
+export function OrderStatusDropdown(props: OrderStatusDropdownProps) {
+  const { currentStatus, onStatusUpdate, isUpdatingStatus, size } = props
 
-    const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow
-    setOpenUpward(shouldOpenUpward)
+  return (
+    <StatusDropdownBase<OrderStatus>
+      currentStatus={currentStatus}
+      allStatuses={orderStatuses}
+      config={orderStatusConfig}
+      getValidNextStatuses={getOrderValidNextStatuses}
+      onStatusUpdate={onStatusUpdate}
+      isUpdatingStatus={isUpdatingStatus}
+      size={size}
+    />
+  )
+}
 
-    const top = shouldOpenUpward
-      ? Math.max(8, buttonRect.top - dropdownHeight)
-      : Math.min(viewportHeight - 8, buttonRect.bottom)
+// ===== Payment Status Dropdown (uses base component) =====
 
-    setDropdownPosition({
-      top,
-      left: buttonRect.left,
-      width: buttonRect.width,
-    })
+const paymentStatusConfig: Record<PaymentStatus, StatusConfig> = {
+  PENDING: {
+    label: 'Pending',
+    color: 'text-yellow-700',
+    bgColor: 'bg-yellow-100 hover:bg-yellow-200',
+  },
+  PAID: {
+    label: 'Paid',
+    color: 'text-green-700',
+    bgColor: 'bg-green-100 hover:bg-green-200',
+  },
+  FAILED: {
+    label: 'Failed',
+    color: 'text-red-700',
+    bgColor: 'bg-red-100 hover:bg-red-200',
+  },
+  REFUNDED: {
+    label: 'Refunded',
+    color: 'text-orange-700',
+    bgColor: 'bg-orange-100 hover:bg-orange-200',
+  },
+}
+
+const paymentStatuses: readonly PaymentStatus[] = [
+  'PENDING',
+  'PAID',
+  'FAILED',
+  'REFUNDED',
+] as const
+
+function getPaymentValidNextStatuses(
+  currentStatus: PaymentStatus,
+): readonly PaymentStatus[] {
+  switch (currentStatus) {
+    case 'PENDING':
+      return ['PAID', 'FAILED']
+    case 'PAID':
+      return ['REFUNDED']
+    case 'FAILED':
+    case 'REFUNDED':
+    default:
+      return []
   }
+}
 
-  useEffect(() => {
-    if (!isOpen) return
-    updateDropdownPosition()
+export interface PaymentStatusDropdownProps {
+  currentStatus: PaymentStatus
+  onStatusUpdate?: (newStatus: PaymentStatus) => Promise<void>
+  isUpdatingStatus?: boolean
+  size?: 'sm' | 'md'
+}
 
-    const handleResizeOrScroll = () => {
-      updateDropdownPosition()
-    }
+export function PaymentStatusDropdown(props: PaymentStatusDropdownProps) {
+  const { currentStatus, onStatusUpdate, isUpdatingStatus, size } = props
 
-    window.addEventListener('resize', handleResizeOrScroll)
-    window.addEventListener('scroll', handleResizeOrScroll, true)
-
-    return () => {
-      window.removeEventListener('resize', handleResizeOrScroll)
-      window.removeEventListener('scroll', handleResizeOrScroll, true)
-    }
-  }, [isOpen])
-
-  const handleStatusClick = async (newStatus: OrderStatus) => {
-    if (newStatus === currentStatus) {
-      setIsOpen(false)
-      return
-    }
-    // Don't allow invalid transitions
-    if (!validNextStatuses.includes(newStatus)) {
-      return
-    }
+  const handleUpdate = async (newStatus: PaymentStatus, _reason?: string) => {
     if (onStatusUpdate) {
       await onStatusUpdate(newStatus)
     }
-    setIsOpen(false)
-  }
-
-  if (!onStatusUpdate) {
-    return (
-      <span
-        className={cn(
-          'text-xs font-medium px-2 py-0.5 rounded',
-          config.bgColor,
-          config.color,
-        )}
-      >
-        {config.label}
-      </span>
-    )
   }
 
   return (
-    <div className="relative">
-      <Button
-        ref={buttonRef}
-        variant="ghost"
-        size="sm"
-        onClick={() => setIsOpen((prev) => !prev)}
-        disabled={isUpdatingStatus}
-        className={cn(
-          'text-xs px-2 py-1 h-auto',
-          config.bgColor,
-          config.color,
-        )}
-      >
-        {isUpdatingStatus ? (
-          <Loader2 className="h-3 w-3 animate-spin mr-1" />
-        ) : null}
-        {config.label}
-      </Button>
-
-      {isOpen &&
-        dropdownPosition &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <>
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setIsOpen(false)}
-            />
-            <div
-              className={cn(
-                'fixed z-50 bg-popover border border-border rounded-md shadow-lg min-w-[160px]',
-              )}
-              style={{
-                top: dropdownPosition.top,
-                left: dropdownPosition.left,
-                minWidth: dropdownPosition.width,
-              }}
-            >
-              {allStatuses.map((status) => {
-                const statusConf = statusConfig[status]
-                const isValid =
-                  validNextStatuses.includes(status) || status === currentStatus
-                const isDisabled = !isValid
-
-                return (
-                  <button
-                    key={status}
-                    onClick={() => handleStatusClick(status)}
-                    disabled={isDisabled}
-                    className={cn(
-                      'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
-                      status === currentStatus && 'bg-accent',
-                      isDisabled
-                        ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:bg-accent cursor-pointer',
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        'h-2 w-2 rounded-full',
-                        status === currentStatus
-                          ? statusConf.bgColor.split(' ')[0]
-                          : isDisabled
-                            ? 'bg-transparent border border-muted-foreground/30'
-                            : 'bg-transparent border border-border',
-                      )}
-                    />
-                    {statusConf.label}
-                  </button>
-                )
-              })}
-            </div>
-          </>,
-          document.body,
-        )}
-    </div>
+    <StatusDropdownBase<PaymentStatus>
+      currentStatus={currentStatus}
+      allStatuses={paymentStatuses}
+      config={paymentStatusConfig}
+      getValidNextStatuses={getPaymentValidNextStatuses}
+      onStatusUpdate={handleUpdate}
+      isUpdatingStatus={isUpdatingStatus}
+      size={size}
+    />
   )
 }

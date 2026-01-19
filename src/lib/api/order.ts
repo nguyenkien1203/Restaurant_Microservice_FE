@@ -7,6 +7,7 @@ import type {
   CreateGuestOrderRequest,
   Order,
   UpdateOrderStatusRequest,
+  UpdatePaymentStatusRequest,
 } from '@/lib/types/order'
 
 /**
@@ -184,6 +185,40 @@ export async function updateOrderStatus(
     const errorData = await response.json().catch(() => ({}))
     throw new Error(
       errorData.message || `Failed to update order status: ${response.status}`
+    )
+  }
+
+  return response.json()
+}
+
+/**
+ * Update order payment status (admin only)
+ */
+export async function updateOrderPaymentStatus(
+  orderId: string | number,
+  statusData: UpdatePaymentStatusRequest,
+): Promise<Order> {
+  const response = await fetch(
+    API_ENDPOINTS.order.updatePaymentStatus(orderId.toString()),
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify(statusData),
+    },
+  )
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      // triggerSessionExpired()
+      // throw new Error('Session expired')
+    }
+    const errorData = await response.json().catch(() => ({}))
+    throw new Error(
+      errorData.message ||
+        `Failed to update payment status: ${response.status}`,
     )
   }
 

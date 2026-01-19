@@ -1,7 +1,6 @@
 import { Button } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useRef } from 'react'
 import { cn } from '@/lib/utils'
 import type { ReservationStatus } from './reservation-row'
 
@@ -53,54 +52,9 @@ export function ReservationStatusDropdown({
     isUpdatingStatus = false,
 }: ReservationStatusDropdownProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [openUpward, setOpenUpward] = useState(false)
-    const [dropdownPosition, setDropdownPosition] = useState<{
-        top: number
-        left: number
-        width: number
-    } | null>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
     const config = statusConfig[currentStatus]
     const validNextStatuses = getValidNextStatuses(currentStatus)
-
-    const updateDropdownPosition = () => {
-        if (!buttonRef.current) return
-        const buttonRect = buttonRef.current.getBoundingClientRect()
-        const viewportHeight = window.innerHeight
-        const spaceBelow = viewportHeight - buttonRect.bottom
-        const spaceAbove = buttonRect.top
-        const dropdownHeight = 220 // Approximate height of dropdown
-
-        const shouldOpenUpward = spaceBelow < dropdownHeight && spaceAbove > spaceBelow
-        setOpenUpward(shouldOpenUpward)
-
-        const top = shouldOpenUpward
-            ? Math.max(8, buttonRect.top - dropdownHeight)
-            : Math.min(viewportHeight - 8, buttonRect.bottom)
-
-        setDropdownPosition({
-            top,
-            left: buttonRect.left,
-            width: buttonRect.width,
-        })
-    }
-
-    useEffect(() => {
-        if (!isOpen) return
-        updateDropdownPosition()
-
-        const handleResizeOrScroll = () => {
-            updateDropdownPosition()
-        }
-
-        window.addEventListener('resize', handleResizeOrScroll)
-        window.addEventListener('scroll', handleResizeOrScroll, true)
-
-        return () => {
-            window.removeEventListener('resize', handleResizeOrScroll)
-            window.removeEventListener('scroll', handleResizeOrScroll, true)
-        }
-    }, [isOpen])
 
     const handleStatusClick = async (newStatus: ReservationStatus) => {
         if (newStatus === currentStatus) {
@@ -135,63 +89,48 @@ export function ReservationStatusDropdown({
                 {config.label}
             </Button>
 
-            {isOpen &&
-                dropdownPosition &&
-                typeof document !== 'undefined' &&
-                createPortal(
-                    <>
-                        <div
-                            className="fixed inset-0 z-40"
-                            onClick={() => setIsOpen(false)}
-                        />
-                        <div
-                            className={cn(
-                                'fixed z-50 bg-popover border border-border rounded-md shadow-lg min-w-[140px]',
-                            )}
-                            style={{
-                                top: dropdownPosition.top,
-                                left: dropdownPosition.left,
-                                minWidth: dropdownPosition.width,
-                            }}
-                        >
-                            {allStatuses.map((status) => {
-                                const statusConf = statusConfig[status]
-                                const isValid =
-                                    validNextStatuses.includes(status) ||
-                                    status === currentStatus
-                                const isDisabled = !isValid
+            {isOpen && (
+                <div
+                    className={cn(
+                        'absolute left-0 mt-2 z-50 bg-popover border border-border rounded-md shadow-lg min-w-[140px]',
+                    )}
+                    style={{ minWidth: buttonRef.current?.offsetWidth }}
+                >
+                    {allStatuses.map((status) => {
+                        const statusConf = statusConfig[status]
+                        const isValid =
+                            validNextStatuses.includes(status) || status === currentStatus
+                        const isDisabled = !isValid
 
-                                return (
-                                    <button
-                                        key={status}
-                                        onClick={() => handleStatusClick(status)}
-                                        disabled={isDisabled}
-                                        className={cn(
-                                            'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
-                                            status === currentStatus && 'bg-accent',
-                                            isDisabled
-                                                ? 'opacity-50 cursor-not-allowed'
-                                                : 'hover:bg-accent cursor-pointer',
-                                        )}
-                                    >
-                                        <span
-                                            className={cn(
-                                                'h-2 w-2 rounded-full',
-                                                status === currentStatus
-                                                    ? statusConf.bgColor.split(' ')[0]
-                                                    : isDisabled
-                                                        ? 'bg-transparent border border-muted-foreground/30'
-                                                        : 'bg-transparent border border-border',
-                                            )}
-                                        />
-                                        {statusConf.label}
-                                    </button>
-                                )
-                            })}
-                        </div>
-                    </>,
-                    document.body,
-                )}
+                        return (
+                            <button
+                                key={status}
+                                onClick={() => handleStatusClick(status)}
+                                disabled={isDisabled}
+                                className={cn(
+                                    'w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors',
+                                    status === currentStatus && 'bg-accent',
+                                    isDisabled
+                                        ? 'opacity-50 cursor-not-allowed'
+                                        : 'hover:bg-accent cursor-pointer',
+                                )}
+                            >
+                                <span
+                                    className={cn(
+                                        'h-2 w-2 rounded-full',
+                                        status === currentStatus
+                                            ? statusConf.bgColor.split(' ')[0]
+                                            : isDisabled
+                                                ? 'bg-transparent border border-muted-foreground/30'
+                                                : 'bg-transparent border border-border',
+                                    )}
+                                />
+                                {statusConf.label}
+                            </button>
+                        )
+                    })}
+                </div>
+            )}
         </div>
     )
 }

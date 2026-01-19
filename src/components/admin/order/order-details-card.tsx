@@ -15,11 +15,18 @@ import {
   Phone,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import type { Order, OrderType, OrderStatus } from '@/lib/types/order'
-import { StatusUpdateDropdown } from './status-update-dropdown'
+import type {
+  Order,
+  OrderType,
+  OrderStatus,
+  PaymentStatus,
+} from '@/lib/types/order'
+import {
+  OrderStatusDropdown,
+  PaymentStatusDropdown,
+} from './status-update-dropdown'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getProfileById } from '@/lib/api/profile'
@@ -33,6 +40,11 @@ interface OrderDetailsCardProps {
     reason?: string,
   ) => Promise<void>
   isUpdatingStatus?: boolean
+  onPaymentStatusUpdate?: (
+    orderId: number,
+    newStatus: PaymentStatus,
+  ) => Promise<void>
+  isUpdatingPaymentStatus?: boolean
 }
 
 const orderTypeConfig: Record<
@@ -93,6 +105,8 @@ export function OrderDetailsCard({
   onClose,
   onStatusUpdate,
   isUpdatingStatus = false,
+  onPaymentStatusUpdate,
+  isUpdatingPaymentStatus = false,
 }: OrderDetailsCardProps) {
   const typeConfig = orderTypeConfig[order.orderType]
   const TypeIcon = typeConfig?.icon || Package2
@@ -131,13 +145,19 @@ export function OrderDetailsCard({
     }
   }
 
+  const handlePaymentStatusUpdate = async (newStatus: PaymentStatus) => {
+    if (onPaymentStatusUpdate) {
+      await onPaymentStatusUpdate(order.id, newStatus)
+    }
+  }
+
   return (
     <Card className="sticky top-4 overflow-y-auto max-h-[calc(100vh-12rem)]">
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="flex items-center gap-4 text-lg">
           Order #{order.id}
           <div className="font-normal">
-            <StatusUpdateDropdown
+            <OrderStatusDropdown
               currentStatus={order.status}
               onStatusUpdate={handleStatusUpdate}
               isUpdatingStatus={isUpdatingStatus}
@@ -256,25 +276,20 @@ export function OrderDetailsCard({
           <h4 className="text-sm font-medium text-foreground">
             Payment Information
           </h4>
-          <div className="flex gap-2">
+          <div className="flex gap-2 items-center justify-between">
             <div className="flex items-center gap-2 text-sm">
               <CreditCard className="h-4 w-4 text-muted-foreground" />
               <span>{order.paymentMethod}</span>
             </div>
-            <div className="flex items-center gap-2 text-sm">
-              <Badge
-                variant="outline"
-                className={cn(
-                  'text-xs',
-                  order.paymentStatus === 'PAID'
-                    ? 'border-green-200 text-green-700 bg-green-50'
-                    : order.paymentStatus === 'PENDING'
-                      ? 'border-yellow-200 text-yellow-700 bg-yellow-50'
-                      : 'border-red-200 text-red-700 bg-red-50',
-                )}
-              >
-                {order.paymentStatus}
-              </Badge>
+            <div
+              className="flex items-center gap-2 text-sm"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <PaymentStatusDropdown
+                currentStatus={order.paymentStatus}
+                onStatusUpdate={handlePaymentStatusUpdate}
+                isUpdatingStatus={isUpdatingPaymentStatus}
+              />
             </div>
           </div>
         </div>
