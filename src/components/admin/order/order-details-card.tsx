@@ -112,6 +112,7 @@ export function OrderDetailsCard({
   const TypeIcon = typeConfig?.icon || Package2
   const isMemberOrder = !!order.userId
   const [isUserExpanded, setIsUserExpanded] = useState(false)
+  const [isGuestExpanded, setIsGuestExpanded] = useState(false)
 
   // Fetch user profile when expanded (for member orders)
   const {
@@ -374,30 +375,54 @@ export function OrderDetailsCard({
               )}
             </div>
           ) : (
-            /* Guest Info (non-member) */
+            /* Guest Info (non-member) - Expandable */
             (order.guestName || order.guestEmail || order.guestPhone) && (
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-foreground">Guest</h4>
-                <div className="grid gap-2">
-                  {order.guestName && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{order.guestName}</span>
-                    </div>
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-between"
+                  onClick={() => setIsGuestExpanded(!isGuestExpanded)}
+                >
+                  <span className="flex items-center gap-2">
+                    <User className="h-4 w-4" />
+                    Guest
+                  </span>
+                  {isGuestExpanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
                   )}
-                  {order.guestEmail && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{order.guestEmail}</span>
-                    </div>
-                  )}
-                  {order.guestPhone && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{order.guestPhone}</span>
-                    </div>
-                  )}
-                </div>
+                </Button>
+
+                {isGuestExpanded && (
+                  <div className="border border-border rounded-lg p-3 space-y-3 bg-muted/30">
+                    {/* Guest Name */}
+                    {order.guestName && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">
+                          {order.guestName}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Email */}
+                    {order.guestEmail && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{order.guestEmail}</span>
+                      </div>
+                    )}
+
+                    {/* Phone */}
+                    {order.guestPhone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm">{order.guestPhone}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )
           )}

@@ -29,6 +29,15 @@ export interface CreatePreOrderRequest {
   notes?: string
 }
 
+export interface CreateGuestPreOrderRequest {
+  items: CreateOrderItemRequest[]
+  paymentMethod: PaymentMethod
+  guestName: string
+  guestEmail: string
+  guestPhone: string
+  notes?: string
+}
+
 export interface CreateGuestOrderRequest {
   orderType: OrderType
   items: CreateOrderItemRequest[]

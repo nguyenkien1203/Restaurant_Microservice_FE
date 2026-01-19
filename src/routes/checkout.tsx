@@ -33,12 +33,14 @@ import {
   createMemberOrder,
   createPreOrder,
   createGuestOrder,
+  createGuestPreOrder,
 } from '@/lib/api/order'
 import type {
   CreateMemberOrderRequest,
   CreateOrderItemRequest,
   CreatePreOrderRequest,
   CreateGuestOrderRequest,
+  CreateGuestPreOrderRequest,
   Order,
 } from '@/lib/types/order'
 
@@ -228,43 +230,55 @@ function CheckoutPage() {
 
       if (!isAuthenticated) {
         // Guest order creation
-        // TODO: Implement guest pre-order endpoint that doesn't require credentials.
-        if (orderType === 'PRE_ORDER') {
+        if (orderType === 'PRE_ORDER' && reservationId) {
+          // Guest pre-order linked to a reservation
+          const guestPreOrderRequest: CreateGuestPreOrderRequest = {
+            items: orderItems,
+            paymentMethod: 'CASH',
+            guestName: formData.fullName,
+            guestEmail: formData.email,
+            guestPhone: formData.phone,
+            notes: formData.notes || undefined,
+          }
+
+          createdOrder = await createGuestPreOrder(reservationId, guestPreOrderRequest)
+          console.log('Guest pre-order created:', createdOrder)
+        } else if (orderType === 'PRE_ORDER' && !reservationId) {
           setError(
-            'Pre-orders for guests are not yet available. Please log in to create a pre-order.',
+            'Reservation ID is required for pre-orders. Please make a reservation first.',
           )
           setIsProcessing(false)
           return
-        }
-
-        // Guest can create TAKEAWAY or DELIVERY orders
-        const guestOrderRequest: CreateGuestOrderRequest = {
-          orderType: orderType,
-          items: orderItems,
-          paymentMethod: 'CASH',
-          guestName: formData.fullName,
-          guestEmail: formData.email,
-          guestPhone: formData.phone,
-          notes: formData.notes || undefined,
-        }
-
-        // Add delivery address for delivery orders
-        if (orderType === 'DELIVERY' && formData.address) {
-          guestOrderRequest.deliveryAddress = formData.address
-        }
-
-        // Add estimated pickup time for takeaway orders
-        if (orderType === 'TAKEAWAY' && formData.pickupTime) {
-          const selectedOption = pickupTimeOptions.find(
-            (opt) => opt.value === formData.pickupTime,
-          )
-          if (selectedOption) {
-            guestOrderRequest.estimatedPickupTime = selectedOption.datetime
+        } else {
+          // Guest can create TAKEAWAY or DELIVERY orders
+          const guestOrderRequest: CreateGuestOrderRequest = {
+            orderType: orderType,
+            items: orderItems,
+            paymentMethod: 'CASH',
+            guestName: formData.fullName,
+            guestEmail: formData.email,
+            guestPhone: formData.phone,
+            notes: formData.notes || undefined,
           }
-        }
 
-        createdOrder = await createGuestOrder(guestOrderRequest)
-        console.log('Guest order created:', createdOrder)
+          // Add delivery address for delivery orders
+          if (orderType === 'DELIVERY' && formData.address) {
+            guestOrderRequest.deliveryAddress = formData.address
+          }
+
+          // Add estimated pickup time for takeaway orders
+          if (orderType === 'TAKEAWAY' && formData.pickupTime) {
+            const selectedOption = pickupTimeOptions.find(
+              (opt) => opt.value === formData.pickupTime,
+            )
+            if (selectedOption) {
+              guestOrderRequest.estimatedPickupTime = selectedOption.datetime
+            }
+          }
+
+          createdOrder = await createGuestOrder(guestOrderRequest)
+          console.log('Guest order created:', createdOrder)
+        }
       } else {
         // Authenticated user order creation
         // Check if this is a pre-order (has reservationId and is PRE_ORDER type)

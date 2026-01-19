@@ -27,6 +27,7 @@ import {
   ReservationDetailsCard,
   type ReservationStatus,
   type ReservationStatusFilter,
+  type CustomerTypeFilter,
 } from '@/components/admin/reservation'
 
 export const Route = createFileRoute('/admin/reservations')({
@@ -40,15 +41,21 @@ function useReservationFilters() {
   const [statusFilter, setStatusFilter] =
     useState<ReservationStatusFilter>('all')
   const [dateFilter, setDateFilter] = useState('')
+  const [customerTypeFilter, setCustomerTypeFilter] =
+    useState<CustomerTypeFilter>('all')
 
   const clearAllFilters = useCallback(() => {
     setSearchQuery('')
     setStatusFilter('all')
     setDateFilter('')
+    setCustomerTypeFilter('all')
   }, [])
 
   const hasActiveFilters =
-    searchQuery.length > 0 || statusFilter !== 'all' || dateFilter !== ''
+    searchQuery.length > 0 ||
+    statusFilter !== 'all' ||
+    dateFilter !== '' ||
+    customerTypeFilter !== 'all'
 
   return {
     searchQuery,
@@ -57,6 +64,8 @@ function useReservationFilters() {
     setStatusFilter,
     dateFilter,
     setDateFilter,
+    customerTypeFilter,
+    setCustomerTypeFilter,
     clearAllFilters,
     hasActiveFilters,
   }
@@ -165,15 +174,18 @@ function AdminReservations() {
           !filters.dateFilter ||
           reservation.reservationDate === filters.dateFilter
 
-        return matchesSearch && matchesStatus && matchesDate
+        // Customer type filter
+        const matchesCustomerType =
+          filters.customerTypeFilter === 'all' ||
+          (filters.customerTypeFilter === 'member' && !!reservation.userId) ||
+          (filters.customerTypeFilter === 'guest' && !!reservation.guestName)
+
+        return matchesSearch && matchesStatus && matchesDate && matchesCustomerType
       })
       .sort((a, b) => {
         if (!sorting.sortField) {
-          // Default: sort by date descending (most recent first)
-          return (
-            new Date(b.reservationDate).getTime() -
-            new Date(a.reservationDate).getTime()
-          )
+          // Default: sort by ID descending (newest first, like orders page)
+          return b.id - a.id
         }
         const modifier = sorting.sortDirection === 'asc' ? 1 : -1
         if (sorting.sortField === 'id') return (a.id - b.id) * modifier
@@ -198,6 +210,7 @@ function AdminReservations() {
     filters.searchQuery,
     filters.statusFilter,
     filters.dateFilter,
+    filters.customerTypeFilter,
     sorting.sortField,
     sorting.sortDirection,
   ])
@@ -216,6 +229,13 @@ function AdminReservations() {
         id: 'status',
         label: filters.statusFilter,
         onRemove: () => filters.setStatusFilter('all'),
+      })
+    }
+    if (filters.customerTypeFilter !== 'all') {
+      tags.push({
+        id: 'customerType',
+        label: filters.customerTypeFilter === 'member' ? 'Member' : 'Guest',
+        onRemove: () => filters.setCustomerTypeFilter('all'),
       })
     }
     if (filters.dateFilter) {
@@ -294,6 +314,8 @@ function AdminReservations() {
                 onStatusChange={filters.setStatusFilter}
                 dateFilter={filters.dateFilter}
                 onDateChange={filters.setDateFilter}
+                customerTypeFilter={filters.customerTypeFilter}
+                onCustomerTypeChange={filters.setCustomerTypeFilter}
               />
 
               <ActiveFilterTags
