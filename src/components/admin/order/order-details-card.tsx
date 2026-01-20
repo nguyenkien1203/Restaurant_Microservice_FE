@@ -270,12 +270,6 @@ export function OrderDetailsCard({
               <span className="text-foreground">${tax.toFixed(2)}</span>
             </div>
           )}
-          {deliveryFee > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Delivery Fee</span>
-              <span className="text-foreground">${deliveryFee.toFixed(2)}</span>
-            </div>
-          )}
           {discountAmount > 0 && (
             <div className="flex justify-between text-sm text-green-600">
               <span>
@@ -286,6 +280,12 @@ export function OrderDetailsCard({
               <span className="font-medium">
                 -${discountAmount.toFixed(2)}
               </span>
+            </div>
+          )}
+          {deliveryFee > 0 && (
+            <div className="flex justify-between items-center my-2 pt-2 border-t border-border text-sm">
+              <span className="text-muted-foreground">Delivery Fee</span>
+              <span className="text-foreground">${deliveryFee.toFixed(2)}</span>
             </div>
           )}
           <div className="flex justify-between font-semibold text-lg pt-2 border-t">

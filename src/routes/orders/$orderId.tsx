@@ -316,14 +316,6 @@ function OrderDetailsPage() {
                     ${subtotal.toFixed(2)}
                   </span>
                 </div>
-                {deliveryFee > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Delivery Fee</span>
-                    <span className="text-foreground">
-                      ${deliveryFee.toFixed(2)}
-                    </span>
-                  </div>
-                )}
                 {tax > 0 && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Tax (8%)</span>
@@ -339,6 +331,14 @@ function OrderDetailsPage() {
                     </span>
                     <span className="font-medium">
                       -${discountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {deliveryFee > 0 && (
+                  <div className="flex justify-between items-center my-4 pt-4 border-t border-border text-sm">
+                    <span className="text-muted-foreground">Delivery Fee</span>
+                    <span className="text-foreground">
+                      ${deliveryFee.toFixed(2)}
                     </span>
                   </div>
                 )}

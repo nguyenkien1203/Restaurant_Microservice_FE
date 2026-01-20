@@ -322,14 +322,6 @@ function OrderConfirmationPage() {
                     <span className="text-foreground">${tax.toFixed(2)}</span>
                   </div>
                 )}
-                {deliveryFee > 0 && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Delivery Fee</span>
-                    <span className="text-foreground">
-                      ${deliveryFee.toFixed(2)}
-                    </span>
-                  </div>
-                )}
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-sm text-green-600">
                     <span>
@@ -339,6 +331,14 @@ function OrderConfirmationPage() {
                     </span>
                     <span className="font-medium">
                       -${discountAmount.toFixed(2)}
+                    </span>
+                  </div>
+                )}
+                {deliveryFee > 0 && (
+                  <div className="flex justify-between items-center my-4 pt-4 border-t border-border text-sm">
+                    <span className="text-muted-foreground">Delivery Fee</span>
+                    <span className="text-foreground">
+                      ${deliveryFee.toFixed(2)}
                     </span>
                   </div>
                 )}
