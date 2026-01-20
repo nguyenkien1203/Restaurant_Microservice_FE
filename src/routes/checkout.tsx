@@ -194,17 +194,20 @@ function CheckoutPage() {
     0,
   )
   const deliveryFee = orderType === 'DELIVERY' ? 5.0 : 0
+
+  // Total = subtotal + tax - discount + deliveryFee
+  const discountPercentage =
+    isAuthenticated && userProfile?.membershipRank
+      ? getDiscountPercentage(userProfile.membershipRank)
+      : 0
+
+  // Match backend behaviour: discount is based on subtotal and rounded down to 2 decimal places (e.g. 0.925 -> 0.92, not 0.93)
+  const rawDiscount =
+    discountPercentage > 0 ? subtotal * (discountPercentage / 100) : 0
+  const discountAmount = Math.floor(rawDiscount * 100) / 100
+
   const tax = subtotal * 0.08
-  const beforeDiscountTotal = subtotal + tax + deliveryFee
-  
-  // Calculate discount for authenticated members
-  const discountPercentage = isAuthenticated && userProfile?.membershipRank
-    ? getDiscountPercentage(userProfile.membershipRank)
-    : 0
-  const discountAmount = discountPercentage > 0
-    ? (subtotal + tax + deliveryFee) * (discountPercentage / 100)
-    : 0
-  const total = beforeDiscountTotal - discountAmount
+  const total = subtotal + tax - discountAmount + deliveryFee
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -752,16 +755,6 @@ function CheckoutPage() {
                           ${tax.toFixed(2)}
                         </span>
                       </div>
-                      {isDelivery && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">
-                            Delivery Fee
-                          </span>
-                          <span className="text-foreground">
-                            ${deliveryFee.toFixed(2)}
-                          </span>
-                        </div>
-                      )}
                       {discountAmount > 0 && (
                         <div className="flex justify-between text-sm text-green-600">
                           <span>
@@ -769,6 +762,16 @@ function CheckoutPage() {
                           </span>
                           <span className="font-medium">
                             -${discountAmount.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {isDelivery && (
+                        <div className="flex justify-between items-center my-4 pt-4 border-t border-border text-sm">
+                          <span className="text-muted-foreground">
+                            Delivery Fee
+                          </span>
+                          <span className="text-foreground">
+                            ${deliveryFee.toFixed(2)}
                           </span>
                         </div>
                       )}
