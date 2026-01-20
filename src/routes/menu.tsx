@@ -7,6 +7,8 @@ import {
   getCartFromStorage,
 } from '@/components/order/cart-sidebar'
 import { fetchMenuItems } from '@/lib/api/menu'
+import { getPublicReservation } from '@/lib/api/reservation'
+import { formatTime24to12 } from '@/lib/api/reservation'
 import type { NormalizedMenuItem } from '@/lib/types/menu'
 import {
   MenuHeader,
@@ -18,16 +20,6 @@ import {
 
 interface MenuSearchParams {
   reservationId?: string
-  date?: string
-  time?: string
-  guests?: string
-  name?: string
-  firstName?: string
-  lastName?: string
-  email?: string
-  phone?: string
-  reservationDate?: string
-  reservationTime?: string
   itemId?: string
 }
 
@@ -36,16 +28,6 @@ export const Route = createFileRoute('/menu')({
   validateSearch: (search: Record<string, unknown>): MenuSearchParams => {
     return {
       reservationId: search.reservationId as string | undefined,
-      date: search.date as string | undefined,
-      time: search.time as string | undefined,
-      guests: search.guests as string | undefined,
-      name: search.name as string | undefined,
-      firstName: search.firstName as string | undefined,
-      lastName: search.lastName as string | undefined,
-      email: search.email as string | undefined,
-      phone: search.phone as string | undefined,
-      reservationDate: search.reservationDate as string | undefined,
-      reservationTime: search.reservationTime as string | undefined,
       itemId: search.itemId as string | undefined,
     }
   },
@@ -63,6 +45,32 @@ export default function MenuPage() {
   const [selectedItem, setSelectedItem] = useState<NormalizedMenuItem | null>(
     null,
   )
+
+  // Fetch reservation details if reservationId is present
+  const { data: reservation } = useQuery({
+    queryKey: ['publicReservation', reservationId],
+    queryFn: () => getPublicReservation(reservationId!),
+    enabled: !!reservationId,
+  })
+
+  // Derive guest info from reservation data
+  const guestInfo = useMemo(() => {
+    if (!reservation) return {}
+
+    // Parse guest name into firstName and lastName
+    const nameParts = reservation.guestName?.split(' ') || []
+    const firstName = nameParts[0] || ''
+    const lastName = nameParts.slice(1).join(' ') || ''
+
+    return {
+      firstName,
+      lastName,
+      email: reservation.guestEmail || undefined,
+      phone: reservation.guestPhone || undefined,
+      reservationDate: reservation.reservationDate,
+      reservationTime: formatTime24to12(reservation.startTime),
+    }
+  }, [reservation])
 
   const {
     data: menuItems = [],
@@ -183,12 +191,12 @@ export default function MenuPage() {
                 onRemoveItem={removeItem}
                 onUpdateNotes={updateNotes}
                 reservationId={reservationId}
-                firstName={search.firstName}
-                lastName={search.lastName}
-                email={search.email}
-                phone={search.phone}
-                reservationDate={search.reservationDate}
-                reservationTime={search.reservationTime}
+                firstName={guestInfo.firstName}
+                lastName={guestInfo.lastName}
+                email={guestInfo.email}
+                phone={guestInfo.phone}
+                reservationDate={guestInfo.reservationDate}
+                reservationTime={guestInfo.reservationTime}
               />
             </div>
           </div>

@@ -49,6 +49,8 @@ export const API_ENDPOINTS = {
     admin: `${API_BASE_URL}/api/reservations`,
     updateStatus: (id: string | number) =>
       `${API_BASE_URL}/api/reservations/${id}/status`,
+    public: (id: string | number) =>
+      `${API_BASE_URL}/api/reservations/public/${id}`,
   },
   table: {
     all: `${API_BASE_URL}/api/tables/all`,

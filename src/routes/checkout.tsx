@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +30,7 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import type { UserProfile } from '@/lib/types/profile'
 import { getMyProfile } from '@/lib/api/profile'
+import { getPublicReservation, formatTime24to12 } from '@/lib/api/reservation'
 import { getDiscountPercentage, APP_TIMEZONE } from '@/lib/utils'
 import {
   createMemberOrder,
@@ -47,12 +49,6 @@ import type {
 
 interface CheckoutSearchParams {
   reservationId?: string
-  firstName?: string
-  lastName?: string
-  email?: string
-  phone?: string
-  reservationDate?: string
-  reservationTime?: string
 }
 
 export const Route = createFileRoute('/checkout')({
@@ -60,12 +56,6 @@ export const Route = createFileRoute('/checkout')({
   validateSearch: (search: Record<string, unknown>): CheckoutSearchParams => {
     return {
       reservationId: search.reservationId as string | undefined,
-      firstName: search.firstName as string | undefined,
-      lastName: search.lastName as string | undefined,
-      email: search.email as string | undefined,
-      phone: search.phone as string | undefined,
-      reservationDate: search.reservationDate as string | undefined,
-      reservationTime: search.reservationTime as string | undefined,
     }
   },
 })
@@ -73,21 +63,38 @@ export const Route = createFileRoute('/checkout')({
 function CheckoutPage() {
   const navigate = useNavigate()
   const search = useSearch({ from: '/checkout' })
-  // const reservationId = search.reservationId
-  const {
-    firstName,
-    lastName,
-    email,
-    phone,
-    reservationId,
-    reservationDate,
-    reservationTime,
-  } = search
+  const reservationId = search.reservationId
 
   const { isAuthenticated, user } = useAuth()
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [cartItems, setCartItems] = useState<CartItem[]>([])
   const [orderType, setOrderType] = useState<OrderType>('TAKEAWAY')
+
+  // Fetch reservation details if reservationId is present
+  const { data: reservation } = useQuery({
+    queryKey: ['publicReservation', reservationId],
+    queryFn: () => getPublicReservation(reservationId!),
+    enabled: !!reservationId,
+  })
+
+  // Derive guest info from reservation data
+  const guestInfo = useMemo(() => {
+    if (!reservation) return {}
+
+    // Parse guest name into firstName and lastName
+    const nameParts = reservation.guestName?.split(' ') || []
+    const firstName = nameParts[0] || ''
+    const lastName = nameParts.slice(1).join(' ') || ''
+
+    return {
+      firstName,
+      lastName,
+      email: reservation.guestEmail || undefined,
+      phone: reservation.guestPhone || undefined,
+      reservationDate: reservation.reservationDate,
+      reservationTime: formatTime24to12(reservation.startTime),
+    }
+  }, [reservation])
 
   // Load cart and order type from localStorage on mount
   useEffect(() => {
@@ -123,24 +130,24 @@ function CheckoutPage() {
     return options.map((option) => {
       // Create pickup time by adding minutes to current time
       const pickupTime = new Date(now.getTime() + option.minutes * 60 * 1000)
-      
+
       // Format date and time in UTC+7 (same simple approach as reservations)
       const dateStr = pickupTime.toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
-      const timeStr = pickupTime.toLocaleTimeString('en-US', { 
-        hour12: false, 
-        hour: '2-digit', 
-        minute: '2-digit', 
+      const timeStr = pickupTime.toLocaleTimeString('en-US', {
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
         second: '2-digit',
-        timeZone: APP_TIMEZONE 
+        timeZone: APP_TIMEZONE
       })
-      
+
       // Create ISO string from UTC+7 components (same simple approach as reservations)
       const [hours, minutes, seconds] = timeStr.split(':').map(Number)
       const [year, month, day] = dateStr.split('-').map(Number)
-      
+
       // Create UTC+7 date
       const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds))
-      
+
       return {
         ...option,
         datetime: utcDate.toISOString(),
@@ -153,14 +160,14 @@ function CheckoutPage() {
   // Initialize form data with contact info from reservation (for guest users)
   const getInitialFormData = () => {
     const fullName =
-      firstName && lastName
-        ? `${firstName} ${lastName}`
-        : firstName || lastName || ''
+      guestInfo.firstName && guestInfo.lastName
+        ? `${guestInfo.firstName} ${guestInfo.lastName}`
+        : guestInfo.firstName || guestInfo.lastName || ''
 
     return {
       fullName,
-      email: email || '',
-      phone: phone || '',
+      email: guestInfo.email || '',
+      phone: guestInfo.phone || '',
       address: '',
       pickupTime: pickupTimeOptions[0].value, // Default to ASAP
       notes: '',
@@ -188,21 +195,25 @@ function CheckoutPage() {
         .catch((err) => {
           console.error('Failed to fetch profile:', err)
         })
-    } else if (firstName || lastName || email || phone) {
-      // For guest users, auto-fill from reservation contact info if available
+    }
+  }, [isAuthenticated])
+
+  // Update form data when reservation data is fetched (for guest users)
+  useEffect(() => {
+    if (!isAuthenticated && reservation) {
       const fullName =
-        firstName && lastName
-          ? `${firstName} ${lastName}`
-          : firstName || lastName || ''
+        guestInfo.firstName && guestInfo.lastName
+          ? `${guestInfo.firstName} ${guestInfo.lastName}`
+          : guestInfo.firstName || guestInfo.lastName || ''
 
       setFormData((prev) => ({
         ...prev,
         fullName: fullName || prev.fullName,
-        email: email || prev.email,
-        phone: phone || prev.phone,
+        email: guestInfo.email || prev.email,
+        phone: guestInfo.phone || prev.phone,
       }))
     }
-  }, [isAuthenticated, firstName, lastName, email, phone])
+  }, [isAuthenticated, reservation, guestInfo])
 
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -630,13 +641,13 @@ function CheckoutPage() {
                             {reservationId || '—'}
                           </p>
                         </div>
-                        {reservationDate && (
+                        {guestInfo.reservationDate && (
                           <div className="flex-1">
                             <p className="text-sm text-muted-foreground">
                               Reservation Date
                             </p>
                             <p className="text-md text-foreground font-medium">
-                              {new Date(reservationDate).toLocaleDateString(
+                              {new Date(guestInfo.reservationDate).toLocaleDateString(
                                 'en-US',
                                 {
                                   weekday: 'long',
@@ -649,13 +660,13 @@ function CheckoutPage() {
                             </p>
                           </div>
                         )}
-                        {reservationTime && (
+                        {guestInfo.reservationTime && (
                           <div className="flex-1">
                             <p className="text-sm text-muted-foreground">
                               Reservation Time
                             </p>
                             <p className="text-md text-foreground font-medium">
-                              {reservationTime}
+                              {guestInfo.reservationTime}
                             </p>
                           </div>
                         )}

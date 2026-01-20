@@ -144,20 +144,20 @@ function ReservationPage() {
       // Call appropriate API based on auth state
       const response = isAuthenticated
         ? await createMemberReservation({
-            reservationDate,
-            startTime,
-            partySize: guests,
-            specialRequests: specialRequests || undefined,
-          })
+          reservationDate,
+          startTime,
+          partySize: guests,
+          specialRequests: specialRequests || undefined,
+        })
         : await createGuestReservation({
-            reservationDate,
-            startTime,
-            partySize: guests,
-            specialRequests: specialRequests || undefined,
-            guestName: `${formData.firstName} ${formData.lastName}`.trim(),
-            guestEmail: formData.email,
-            guestPhone: formData.phone,
-          })
+          reservationDate,
+          startTime,
+          partySize: guests,
+          specialRequests: specialRequests || undefined,
+          guestName: `${formData.firstName} ${formData.lastName}`.trim(),
+          guestEmail: formData.email,
+          guestPhone: formData.phone,
+        })
 
       setReservationId(response.id)
       setConfirmationCode(response.confirmationCode)
@@ -178,36 +178,8 @@ function ReservationPage() {
   }
 
   const handlePreOrder = () => {
-    const name = isAuthenticated
-      ? userProfile?.fullName || user?.fullName || ''
-      : `${formData.firstName} ${formData.lastName}`
-    const params = new URLSearchParams({
-      reservationId: reservationId?.toString() || '',
-      date: selectedDate?.toISOString() || '',
-      time: selectedTime || '',
-      guests: guests.toString(),
-      name,
-    })
-
-    // For guest users, pass contact info to menu/checkout
-    if (!isAuthenticated) {
-      if (formData.firstName) params.set('firstName', formData.firstName)
-      if (formData.lastName) params.set('lastName', formData.lastName)
-      if (formData.email) params.set('email', formData.email)
-      if (formData.phone) params.set('phone', formData.phone)
-    }
-
-    // Always pass reservation date and time for pre-orders
-    if (selectedDate) {
-      // Format date as YYYY-MM-DD in UTC+7 timezone
-      const dateStr = selectedDate.toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
-      params.set('reservationDate', dateStr)
-    }
-    if (selectedTime) {
-      params.set('reservationTime', selectedTime)
-    }
-
-    navigate({ to: '/menu', search: Object.fromEntries(params) })
+    // Only pass reservationId - details will be fetched from API on menu page
+    navigate({ to: '/menu', search: { reservationId: reservationId?.toString() || '' } })
   }
 
   // Get the email to display in confirmation

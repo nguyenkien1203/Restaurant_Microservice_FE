@@ -1,28 +1,28 @@
 import { API_ENDPOINTS } from '../config'
 import { triggerSessionExpired } from '../auth-context'
 import type {
-  AvailabilityResponse,
-  CreateReservationRequest,
-  ReservationResponse,
-  UpdateReservationStatusRequest,
+    AvailabilityResponse,
+    CreateReservationRequest,
+    ReservationResponse,
+    UpdateReservationStatusRequest,
 } from '../types/reservation'
 
 /**
  * Check availability for a given date and party size
  */
 export async function checkAvailability(
-  date: string,
-  partySize: number,
+    date: string,
+    partySize: number,
 ): Promise<AvailabilityResponse> {
-  const response = await fetch(
-    API_ENDPOINTS.reservation.availability(date, partySize),
-  )
+    const response = await fetch(
+        API_ENDPOINTS.reservation.availability(date, partySize),
+    )
 
-  if (!response.ok) {
-    throw new Error(`Failed to check availability: ${response.statusText}`)
-  }
+    if (!response.ok) {
+        throw new Error(`Failed to check availability: ${response.statusText}`)
+    }
 
-  return response.json()
+    return response.json()
 }
 
 /**
@@ -61,122 +61,146 @@ export function formatTime12to24(time12: string): string {
  * Requires authentication (cookies are sent automatically)
  */
 export async function createMemberReservation(
-  request: CreateReservationRequest,
+    request: CreateReservationRequest,
 ): Promise<ReservationResponse> {
-  const response = await fetch(API_ENDPOINTS.reservation.create, {
-    method: 'POST',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  })
+    const response = await fetch(API_ENDPOINTS.reservation.create, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+    })
 
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(
-      `Failed to create reservation: ${error || response.statusText}`,
-    )
-  }
+    if (!response.ok) {
+        const error = await response.text()
+        throw new Error(
+            `Failed to create reservation: ${error || response.statusText}`,
+        )
+    }
 
-  return response.json()
+    return response.json()
 }
 
 /**
  * Create a new reservation for guests (no authentication required)
  */
 export async function createGuestReservation(
-  request: CreateReservationRequest,
+    request: CreateReservationRequest,
 ): Promise<ReservationResponse> {
-  const response = await fetch(API_ENDPOINTS.reservation.createGuest, {
-    method: 'POST',
-    // No credentials - don't send cookies for guest reservations
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  })
+    const response = await fetch(API_ENDPOINTS.reservation.createGuest, {
+        method: 'POST',
+        // No credentials - don't send cookies for guest reservations
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+    })
 
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(
-      `Failed to create reservation: ${error || response.statusText}`,
-    )
-  }
+    if (!response.ok) {
+        const error = await response.text()
+        throw new Error(
+            `Failed to create reservation: ${error || response.statusText}`,
+        )
+    }
 
-  return response.json()
+    return response.json()
 }
 
 /**
  * Get the current user's reservations
  */
 export async function getMyReservations(): Promise<ReservationResponse[]> {
-  const response = await fetch(API_ENDPOINTS.reservation.myReservations, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+    const response = await fetch(API_ENDPOINTS.reservation.myReservations, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch reservations: ${response.statusText}`)
-  }
+    if (!response.ok) {
+        throw new Error(`Failed to fetch reservations: ${response.statusText}`)
+    }
 
-  return response.json()
+    return response.json()
 }
 
 
 
 /**
+ * Get public reservation details by ID
+ * This endpoint does not require authentication
+ */
+export async function getPublicReservation(
+    reservationId: string | number,
+): Promise<ReservationResponse> {
+    const response = await fetch(
+        API_ENDPOINTS.reservation.public(reservationId),
+        {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        },
+    )
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch reservation: ${response.statusText}`)
+    }
+
+    return response.json()
+}
+
+/**
  * Get all reservations (admin only)
  */
 export async function getAllReservations(): Promise<ReservationResponse[]> {
-  const response = await fetch(API_ENDPOINTS.reservation.admin, {
-    method: 'GET',
-    credentials: 'include',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  })
+    const response = await fetch(API_ENDPOINTS.reservation.admin, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
 
-  if (!response.ok) {
-    throw new Error(`Failed to fetch reservations: ${response.statusText}`)
-  }
+    if (!response.ok) {
+        throw new Error(`Failed to fetch reservations: ${response.statusText}`)
+    }
 
-  return response.json()
+    return response.json()
 }
 
 /**
  * Update reservation status (admin only)
  */
 export async function updateReservationStatus(
-  reservationId: string | number,
-  statusData: UpdateReservationStatusRequest,
+    reservationId: string | number,
+    statusData: UpdateReservationStatusRequest,
 ): Promise<ReservationResponse> {
-  const response = await fetch(
-    API_ENDPOINTS.reservation.updateStatus(reservationId),
-    {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      credentials: 'include',
-      body: JSON.stringify(statusData),
-    },
-  )
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      triggerSessionExpired()
-      throw new Error('Session expired')
-    }
-    const errorData = await response.json().catch(() => ({}))
-    throw new Error(
-      errorData.message ||
-        `Failed to update reservation status: ${response.status}`,
+    const response = await fetch(
+        API_ENDPOINTS.reservation.updateStatus(reservationId),
+        {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify(statusData),
+        },
     )
-  }
 
-  return response.json()
+    if (!response.ok) {
+        if (response.status === 401) {
+            triggerSessionExpired()
+            throw new Error('Session expired')
+        }
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(
+            errorData.message ||
+            `Failed to update reservation status: ${response.status}`,
+        )
+    }
+
+    return response.json()
 }
