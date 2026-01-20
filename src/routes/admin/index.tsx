@@ -113,6 +113,13 @@ function AdminDashboard() {
       }
     })
 
+    // Calculate new users registered today
+    const newUsersToday = profiles.filter((profile) => {
+      if (!profile.createdAt) return false
+      const profileDateStr = new Date(profile.createdAt).toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
+      return profileDateStr === todayStr
+    }).length
+
     // Calculate overall growth rate (average of revenue and orders growth)
     const overallGrowth = (revenueGrowth + ordersGrowth) / 2
 
@@ -123,6 +130,7 @@ function AdminDashboard() {
       ordersGrowth,
       activeCustomers: uniqueCustomers.size,
       totalProfiles: profiles.length,
+      newUsersToday,
       revenueGrowth,
       overallGrowth,
     }
@@ -198,17 +206,9 @@ function AdminDashboard() {
         <StatCard
           title="Total Revenue"
           value={formatCurrency(stats.totalRevenue)}
-          // change={`${formatPercent(stats.revenueGrowth)} from yesterday`}
-          // changeType={stats.revenueGrowth >= 0 ? 'positive' : 'negative'}
-          icon={<DollarSign className="h-5 w-5" />}
-          isLoading={ordersLoading}
-        />
-        <StatCard
-          title="Growth Rate"
-          value={formatPercent(stats.overallGrowth)}
-          change="Today vs yesterday"
-          changeType={stats.overallGrowth >= 0 ? 'positive' : 'negative'}
-          icon={<TrendingUp className="h-5 w-5" />}
+          change={`${formatPercent(stats.revenueGrowth)} from yesterday`}
+          changeType={stats.revenueGrowth >= 0 ? 'positive' : 'negative'}
+          icon={<DollarSign className="h-full w-full" />}
           isLoading={ordersLoading}
         />
         <StatCard
@@ -216,15 +216,23 @@ function AdminDashboard() {
           value={stats.todayOrders.toString()}
           change={`${formatPercent(stats.ordersGrowth)} from yesterday`}
           changeType={stats.ordersGrowth >= 0 ? 'positive' : 'negative'}
-          icon={<ShoppingBag className="h-5 w-5" />}
+          icon={<ShoppingBag className="h-full w-full" />}
           isLoading={ordersLoading}
         />
         <StatCard
-          title="Active Customers"
-          value={stats.activeCustomers.toLocaleString()}
-          change={`${stats.totalProfiles} total registered users`}
-          changeType="neutral"
-          icon={<Users className="h-5 w-5" />}
+          title="Overall Growth Rate"
+          value={formatPercent(stats.overallGrowth)}
+          change="Today vs yesterday"
+          changeType={stats.overallGrowth >= 0 ? 'positive' : 'negative'}
+          icon={<TrendingUp className="h-full w-full" />}
+          isLoading={ordersLoading}
+        />
+        <StatCard
+          title="Total Registered Users"
+          value={stats.totalProfiles.toLocaleString()}
+          change={stats.newUsersToday > 0 ? `${stats.newUsersToday} new user${stats.newUsersToday > 1 ? 's' : ''} registered today` : 'No new users today'}
+          changeType={stats.newUsersToday > 0 ? 'positive' : 'neutral'}
+          icon={<Users className="h-full w-full" />}
           isLoading={ordersLoading}
         />
       </div>
