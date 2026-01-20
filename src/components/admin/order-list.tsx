@@ -31,7 +31,7 @@ function formatTimeAgo(dateString: string | undefined): string {
 
 function getCustomerLabel(order: Order): string {
   if (order.orderType === "DINE_IN") {
-    return order.reservationId ? `Table ${order.reservationId}` : "Dine-in"
+    return "Dine-in"
   }
   if (order.orderType === "TAKEAWAY") return "Takeaway"
   if (order.orderType === "DELIVERY") return "Delivery"

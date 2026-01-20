@@ -301,7 +301,7 @@ export function OrderDetailsCard({
           <h4 className="text-sm font-medium text-foreground">
             Payment Information
           </h4>
-          <div className="flex gap-2 items-center justify-between">
+          <div className="flex gap-3 items-center">
             <div className="flex items-center gap-2 text-sm">
               <CreditCard className="h-4 w-4 text-muted-foreground" />
               <span>{order.paymentMethod}</span>

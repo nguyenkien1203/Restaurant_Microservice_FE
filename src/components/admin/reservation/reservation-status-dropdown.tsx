@@ -53,6 +53,7 @@ export function ReservationStatusDropdown({
 }: ReservationStatusDropdownProps) {
     const [isOpen, setIsOpen] = useState(false)
     const buttonRef = useRef<HTMLButtonElement>(null)
+    const [openDirection, setOpenDirection] = useState<'up' | 'down'>('down')
     const config = statusConfig[currentStatus]
     const validNextStatuses = getValidNextStatuses(currentStatus)
 
@@ -69,13 +70,26 @@ export function ReservationStatusDropdown({
         setIsOpen(false)
     }
 
+    const toggleOpen = () => {
+        setIsOpen((prev) => {
+            const next = !prev
+            if (next && buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect()
+                const spaceBelow = window.innerHeight - rect.bottom
+                // If there's limited space below, open upwards for bottom rows
+                setOpenDirection(spaceBelow < 240 ? 'up' : 'down')
+            }
+            return next
+        })
+    }
+
     return (
         <div className="relative">
             <Button
                 ref={buttonRef}
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsOpen((prev) => !prev)}
+                onClick={toggleOpen}
                 disabled={isUpdatingStatus}
                 className={cn(
                     'text-xs px-2 py-1 h-auto',
@@ -92,7 +106,8 @@ export function ReservationStatusDropdown({
             {isOpen && (
                 <div
                     className={cn(
-                        'absolute left-0 mt-2 z-50 bg-popover border border-border rounded-md shadow-lg min-w-[140px]',
+                        'absolute left-0 z-50 bg-popover border border-border rounded-md shadow-lg min-w-[140px]',
+                        openDirection === 'down' ? 'top-full mt-2' : 'bottom-full mb-2',
                     )}
                     style={{ minWidth: buttonRef.current?.offsetWidth }}
                 >

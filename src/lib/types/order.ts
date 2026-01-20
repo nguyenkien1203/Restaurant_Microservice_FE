@@ -51,10 +51,8 @@ export interface CreateGuestOrderRequest {
 }
 
 export interface CreateDineInOrderRequest {
-  tableId: number
   items: CreateOrderItemRequest[]
   notes?: string
-  reservationId?: number
 }
 
 export interface UpdateOrderStatusRequest {

@@ -33,6 +33,7 @@ function StatusDropdownBase<T extends StatusUnion>({
 }: BaseStatusDropdownProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const [openDirection, setOpenDirection] = useState<'up' | 'down'>('down')
   const config = statusConfig[currentStatus]
   const validNextStatuses = getValidNextStatuses?.(currentStatus) ?? allStatuses
 
@@ -49,6 +50,19 @@ function StatusDropdownBase<T extends StatusUnion>({
       await onStatusUpdate(newStatus)
     }
     setIsOpen(false)
+  }
+
+  const toggleOpen = () => {
+    setIsOpen((prev) => {
+      const next = !prev
+      if (next && buttonRef.current) {
+        const rect = buttonRef.current.getBoundingClientRect()
+        const spaceBelow = window.innerHeight - rect.bottom
+        // If there's less than 240px below, open upwards to avoid clipping
+        setOpenDirection(spaceBelow < 240 ? 'up' : 'down')
+      }
+      return next
+    })
   }
 
   if (!onStatusUpdate) {
@@ -73,7 +87,7 @@ function StatusDropdownBase<T extends StatusUnion>({
         variant="ghost"
         // Map custom size to button size props (we only use 'sm' vs default)
         size={size === 'sm' ? 'sm' : 'default'}
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={toggleOpen}
         disabled={isUpdatingStatus}
         className={cn('text-xs px-2 py-1 h-auto', config.bgColor, config.color)}
       >
@@ -86,7 +100,8 @@ function StatusDropdownBase<T extends StatusUnion>({
       {isOpen && (
         <div
           className={cn(
-            'absolute left-0 mt-2 z-50 bg-popover border border-border rounded-md shadow-lg min-w-[160px]',
+            'absolute left-0 z-50 bg-popover border border-border rounded-md shadow-lg min-w-[160px]',
+            openDirection === 'down' ? 'top-full mt-2' : 'bottom-full mb-2',
           )}
           style={{ minWidth: buttonRef.current?.offsetWidth }}
         >
