@@ -1,7 +1,7 @@
 import { Link, useRouterState, useNavigate } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
-  LayoutDashboard,
+  HomeIcon,
   UtensilsCrossed,
   Calendar,
   ShoppingBag,
@@ -9,16 +9,18 @@ import {
   Settings,
   LogOut,
   Shield,
+  LayoutGrid,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/lib/auth-context'
 import { getMyProfile } from '@/lib/api/profile'
 
 const navItems = [
-  { href: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/admin', icon: HomeIcon, label: 'Dashboard' },
   { href: '/admin/menu', icon: UtensilsCrossed, label: 'Menu Management' },
   { href: '/admin/orders', icon: ShoppingBag, label: 'Orders' },
   { href: '/admin/reservations', icon: Calendar, label: 'Reservations' },
+  { href: '/admin/tables', icon: LayoutGrid, label: 'Tables' },
   // { href: '/admin/kitchen', icon: ChefHat, label: 'Kitchen View' },
   { href: '/admin/users', icon: Users, label: 'Users' },
   // { href: '/admin/staff', icon: Users, label: 'Staff' },

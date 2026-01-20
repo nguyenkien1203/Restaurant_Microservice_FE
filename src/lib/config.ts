@@ -50,4 +50,7 @@ export const API_ENDPOINTS = {
     updateStatus: (id: string | number) =>
       `${API_BASE_URL}/api/reservations/${id}/status`,
   },
+  table: {
+    all: `${API_BASE_URL}/api/tables/all`,
+  },
 } as const
