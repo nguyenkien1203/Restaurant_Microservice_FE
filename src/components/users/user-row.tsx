@@ -1,5 +1,7 @@
 import { TableCell, TableRow } from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
 import type { UserProfile } from '@/lib/types/profile'
+import { getMembershipRankBadgeClasses } from '@/lib/ui/membership'
 
 interface UserRowProps {
   user: UserProfile
@@ -27,6 +29,27 @@ export function UserRow({ user }: UserRowProps) {
       </TableCell> */}
       <TableCell>
         <span className="font-medium text-foreground">{fullName}</span>
+      </TableCell>
+      <TableCell>
+        <Badge
+          variant={user.role === 'ADMIN' ? 'default' : 'secondary'}
+          className={user.role === 'ADMIN' ? 'uppercase' : ''}
+        >
+          {user.role === 'ADMIN' ? 'Admin' : 'Member'}
+        </Badge>
+      </TableCell>
+      <TableCell>
+        {user.role === 'USER' && user.membershipRank ? (
+          <Badge
+            className={`uppercase hover:none hover:bg-accent ${getMembershipRankBadgeClasses(
+              user.membershipRank
+            )}`}
+          >
+            {user.membershipRank}
+          </Badge>
+        ) : (
+          <span className="text-xs text-muted-foreground">-</span>
+        )}
       </TableCell>
       <TableCell>
         <span className="text-sm text-foreground break-all">{email}</span>

@@ -2,6 +2,8 @@
 
 export type MembershipRank = 'SILVER' | 'GOLD' | 'PLATINUM' | 'VIP'
 
+export type UserRole = 'ADMIN' | 'USER'
+
 export interface UserProfile {
   id: number
   userId: string
@@ -9,6 +11,7 @@ export interface UserProfile {
   phone: string
   email: string
   address: string
+  role: UserRole
   loyaltyPoints: number
   membershipRank: MembershipRank
   createdAt: string

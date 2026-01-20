@@ -40,6 +40,8 @@ export function UserTable({ users, isLoading, error }: UserTableProps) {
         <TableRow>
           {/* <TableHead>User ID</TableHead> */}
           <TableHead>Full Name</TableHead>
+          <TableHead>Role</TableHead>
+          <TableHead>Membership</TableHead>
           <TableHead>Email</TableHead>
           <TableHead>Phone</TableHead>
           <TableHead>Address</TableHead>

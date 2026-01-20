@@ -28,3 +28,6 @@ export {
   DeleteConfirmDialog,
 } from './menu'
 export type { StatusFilter, DietaryFilter } from './menu'
+
+// User-specific components
+export { UserFilters } from './user/user-filters'
