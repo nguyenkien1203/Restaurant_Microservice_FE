@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { getMyReservations, formatTime24to12 } from '@/lib/api/reservation'
 import type { ReservationResponse } from '@/lib/types/reservation'
+import { APP_TIMEZONE, getTodayInAppTimezone } from '@/lib/utils'
 
 // Status badge colors
 const statusColors: Record<string, string> = {
@@ -23,6 +24,7 @@ function formatDate(dateString: string): string {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    timeZone: APP_TIMEZONE,
   })
 }
 
@@ -121,7 +123,7 @@ export function ReservationsTab() {
   })
 
   // Separate upcoming and past reservations
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayInAppTimezone()
   const upcomingReservations = reservations.filter(r =>
     r.reservationDate >= today && r.status !== 'CANCELLED' && r.status !== 'COMPLETED' && r.status !== 'NO_SHOW'
   )

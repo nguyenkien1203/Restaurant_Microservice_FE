@@ -7,6 +7,7 @@ import { OrderList } from '@/components/order/order-list'
 import type { Order } from '@/lib/types/order'
 import { getMyReservations, formatTime24to12 } from '@/lib/api/reservation'
 import type { MembershipRank } from '@/lib/types/profile'
+import { APP_TIMEZONE, getTodayInAppTimezone } from '@/lib/utils'
 
 interface DashboardTabProps {
   firstName: string
@@ -22,6 +23,7 @@ function formatDate(dateString: string): string {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
+    timeZone: APP_TIMEZONE,
   })
 }
 
@@ -138,7 +140,7 @@ export function DashboardTab({
   })
 
   // Get upcoming reservations (today or later, not cancelled/completed)
-  const today = new Date().toISOString().split('T')[0]
+  const today = getTodayInAppTimezone()
   const upcomingReservations = reservations
     .filter(r =>
       r.reservationDate >= today &&

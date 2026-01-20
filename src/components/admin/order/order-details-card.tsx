@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn, APP_TIMEZONE } from '@/lib/utils'
 import type {
   Order,
   OrderType,
@@ -77,17 +77,6 @@ const orderTypeConfig: Record<
   },
 }
 
-function formatDate(dateString?: string) {
-  if (!dateString) return 'N/A'
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-}
-
 function formatDateTime(dateString?: string) {
   if (!dateString) return 'N/A'
   const date = new Date(dateString)
@@ -97,6 +86,7 @@ function formatDateTime(dateString?: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: APP_TIMEZONE,
   })
 }
 
@@ -218,7 +208,20 @@ export function OrderDetailsCard({
             </h4>
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span>{formatDate(order.estimatedPickupTime)}</span>
+              <span>
+                {new Date(order.estimatedPickupTime).toLocaleString(
+                  'en-US',
+                  {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZone: APP_TIMEZONE,
+                  },
+                )}
+              </span>
             </div>
           </div>
         )}

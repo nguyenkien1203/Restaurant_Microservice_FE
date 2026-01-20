@@ -21,7 +21,7 @@ import { getOrderById } from '@/lib/api/order'
 import { fetchMenuItems } from '@/lib/api/menu'
 import { saveCartToStorage } from '@/components/order/cart-sidebar'
 import type { CartItem } from '@/components/order/cart-sidebar'
-import { cn } from '@/lib/utils'
+import { cn, APP_TIMEZONE } from '@/lib/utils'
 import type { OrderType } from '@/lib/types/order'
 
 export const Route = createFileRoute('/orders/$orderId')({
@@ -67,6 +67,7 @@ function formatDate(dateString?: string) {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: APP_TIMEZONE,
   })
 }
 

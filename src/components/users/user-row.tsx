@@ -2,6 +2,7 @@ import { TableCell, TableRow } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import type { UserProfile } from '@/lib/types/profile'
 import { getMembershipRankBadgeClasses } from '@/lib/ui/membership'
+import { APP_TIMEZONE } from '@/lib/utils'
 
 interface UserRowProps {
   user: UserProfile
@@ -70,6 +71,7 @@ export function UserRow({ user }: UserRowProps) {
               year: 'numeric',
               month: 'short',
               day: 'numeric',
+              timeZone: APP_TIMEZONE,
             })}
           </span>
           <span>
@@ -78,6 +80,7 @@ export function UserRow({ user }: UserRowProps) {
               year: 'numeric',
               month: 'short',
               day: 'numeric',
+              timeZone: APP_TIMEZONE,
             })}
           </span>
         </div>

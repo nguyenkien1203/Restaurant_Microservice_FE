@@ -22,6 +22,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getOrderById } from '@/lib/api/order'
 import { getProfileById } from '@/lib/api/profile'
+import { APP_TIMEZONE } from '@/lib/utils'
 
 interface ReservationDetailsCardProps {
   reservation: ReservationResponse
@@ -40,6 +41,7 @@ function formatDate(dateString: string) {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: APP_TIMEZONE,
   })
 }
 
@@ -51,6 +53,7 @@ function formatDateTime(dateString: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: APP_TIMEZONE,
   })
 }
 

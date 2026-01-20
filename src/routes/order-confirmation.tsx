@@ -22,6 +22,7 @@ import {
 import { getOrderById } from '@/lib/api/order'
 import type { Order, OrderType } from '@/lib/types/order'
 import { PopupModal } from '@/components/ui/popup-modal'
+import { APP_TIMEZONE } from '@/lib/utils'
 
 export const Route = createFileRoute('/order-confirmation')({
   component: OrderConfirmationPage,
@@ -243,7 +244,7 @@ function OrderConfirmationPage() {
                             day: 'numeric',
                             hour: '2-digit',
                             minute: '2-digit',
-                            timeZone: 'Asia/Bangkok', // UTC+7
+                            timeZone: APP_TIMEZONE,
                           },
                         )}
                       </p>

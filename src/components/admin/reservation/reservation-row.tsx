@@ -1,6 +1,6 @@
 import { TableCell, TableRow } from '@/components/ui/table'
 import { CalendarDays, Clock, Users, MapPin } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, APP_TIMEZONE } from '@/lib/utils'
 import type { ReservationResponse } from '@/lib/types/reservation'
 import { formatTime24to12 } from '@/lib/api/reservation'
 import { ReservationStatusDropdown } from './reservation-status-dropdown'
@@ -33,6 +33,7 @@ function formatDate(dateString: string) {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    timeZone: APP_TIMEZONE,
   })
 }
 

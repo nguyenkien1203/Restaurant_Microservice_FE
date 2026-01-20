@@ -1,6 +1,6 @@
 import { TableCell, TableRow } from '@/components/ui/table'
 import { Package2, Handbag, Clock, UtensilsCrossed } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, APP_TIMEZONE } from '@/lib/utils'
 import type {
   Order,
   OrderType,
@@ -63,6 +63,7 @@ function formatDate(dateString?: string) {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: APP_TIMEZONE,
   })
 }
 

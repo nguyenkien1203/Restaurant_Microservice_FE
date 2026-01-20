@@ -29,7 +29,7 @@ import {
 import { useAuth } from '@/lib/auth-context'
 import type { UserProfile } from '@/lib/types/profile'
 import { getMyProfile } from '@/lib/api/profile'
-import { getDiscountPercentage } from '@/lib/utils'
+import { getDiscountPercentage, APP_TIMEZONE } from '@/lib/utils'
 import {
   createMemberOrder,
   createPreOrder,
@@ -121,11 +121,29 @@ function CheckoutPage() {
     ]
 
     return options.map((option) => {
-      const pickupTime = new Date(now)
-      pickupTime.setMinutes(now.getMinutes() + option.minutes)
+      // Create pickup time by adding minutes to current time
+      const pickupTime = new Date(now.getTime() + option.minutes * 60 * 1000)
+      
+      // Format date and time in UTC+7 (same simple approach as reservations)
+      const dateStr = pickupTime.toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
+      const timeStr = pickupTime.toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        timeZone: APP_TIMEZONE 
+      })
+      
+      // Create ISO string from UTC+7 components (same simple approach as reservations)
+      const [hours, minutes, seconds] = timeStr.split(':').map(Number)
+      const [year, month, day] = dateStr.split('-').map(Number)
+      
+      // Create UTC+7 date
+      const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes, seconds))
+      
       return {
         ...option,
-        datetime: pickupTime.toISOString(),
+        datetime: utcDate.toISOString(),
       }
     })
   }
@@ -625,6 +643,7 @@ function CheckoutPage() {
                                   year: 'numeric',
                                   month: 'long',
                                   day: 'numeric',
+                                  timeZone: APP_TIMEZONE,
                                 },
                               )}
                             </p>
