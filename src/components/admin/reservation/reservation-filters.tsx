@@ -7,7 +7,7 @@ import {
   X,
   User,
 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { cn, APP_TIMEZONE } from '@/lib/utils'
 import { FilterDropdown, FilterDropdownHeader } from '../filter-dropdown'
 import { SearchInput } from '../search-input'
 import { Button } from '@/components/ui/button'
@@ -173,6 +173,7 @@ function DateFilterDropdown({
       month: 'short',
       day: 'numeric',
       year: 'numeric',
+      timeZone: APP_TIMEZONE,
     })
   }
 
@@ -275,6 +276,7 @@ function DateFilterDropdown({
                 {currentMonth.toLocaleDateString('en-US', {
                   month: 'long',
                   year: 'numeric',
+                  timeZone: APP_TIMEZONE,
                 })}
               </h3>
             </div>

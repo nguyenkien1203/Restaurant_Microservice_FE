@@ -28,6 +28,7 @@ import {
   formatTime24to12,
   formatTime12to24,
 } from '@/lib/api/reservation'
+import { APP_TIMEZONE } from '@/lib/utils'
 
 export const Route = createFileRoute('/reservation')({
   component: ReservationPage,
@@ -83,8 +84,8 @@ function ReservationPage() {
       setSelectedTime(null) // Reset selected time when fetching new availability
 
       try {
-        // Format date as YYYY-MM-DD
-        const dateStr = date.toISOString().split('T')[0]
+        // Format date as YYYY-MM-DD in UTC+7 timezone
+        const dateStr = date.toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
         const response = await checkAvailability(dateStr, partySize)
 
         // Convert backend response to TimeSlotData format
@@ -123,6 +124,7 @@ function ReservationPage() {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
+      timeZone: APP_TIMEZONE,
     })
   }
 
@@ -133,8 +135,8 @@ function ReservationPage() {
     setSubmitError(null)
 
     try {
-      // Format date as YYYY-MM-DD
-      const reservationDate = selectedDate.toISOString().split('T')[0]
+      // Format date as YYYY-MM-DD in UTC+7 timezone
+      const reservationDate = selectedDate.toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
       // Convert time from 12-hour to 24-hour format (HH:mm)
       const time24 = formatTime12to24(selectedTime)
       const startTime = time24.substring(0, 5) // Remove seconds, keep HH:mm
@@ -197,7 +199,9 @@ function ReservationPage() {
 
     // Always pass reservation date and time for pre-orders
     if (selectedDate) {
-      params.set('reservationDate', selectedDate.toISOString())
+      // Format date as YYYY-MM-DD in UTC+7 timezone
+      const dateStr = selectedDate.toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
+      params.set('reservationDate', dateStr)
     }
     if (selectedTime) {
       params.set('reservationTime', selectedTime)
@@ -216,6 +220,7 @@ function ReservationPage() {
   const currentMonth = new Date().toLocaleDateString('en-US', {
     month: 'long',
     year: 'numeric',
+    timeZone: APP_TIMEZONE,
   })
 
   return (

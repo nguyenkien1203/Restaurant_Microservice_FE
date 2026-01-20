@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { Order } from "@/lib/types/order"
-import { cn } from "@/lib/utils"
+import { cn, APP_TIMEZONE } from "@/lib/utils"
 
 interface OrderListProps {
   orders: Order[]

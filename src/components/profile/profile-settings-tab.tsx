@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '@/lib/auth-context'
 import { updateMyProfile } from '@/lib/api/profile'
 import type { UserProfile, UpdateProfileRequest, MembershipRank } from '@/lib/types/profile'
+import { APP_TIMEZONE } from '@/lib/utils'
 
 interface ProfileSettingsTabProps {
   profile?: UserProfile
@@ -333,6 +334,7 @@ export function ProfileSettingsTab({
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
+                    timeZone: APP_TIMEZONE,
                   })}
                 </span>
               </div>
@@ -343,6 +345,7 @@ export function ProfileSettingsTab({
                     year: 'numeric',
                     month: 'long',
                     day: 'numeric',
+                    timeZone: APP_TIMEZONE,
                   })}
                 </span>
               </div>

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
+import { cn, APP_TIMEZONE } from '@/lib/utils'
 import type {
   Order,
   OrderType,
@@ -85,6 +85,7 @@ function formatDate(dateString?: string) {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: APP_TIMEZONE,
   })
 }
 
@@ -97,6 +98,7 @@ function formatDateTime(dateString?: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: APP_TIMEZONE,
   })
 }
 

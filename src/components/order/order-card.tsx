@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { OrderStatusBadge } from './order-status-badge'
-import { cn } from '@/lib/utils'
+import { cn, APP_TIMEZONE } from '@/lib/utils'
 import type { Order, OrderType } from '@/lib/types/order'
 
 interface OrderCardProps {
@@ -57,6 +57,7 @@ function formatDate(dateString?: string, includeTime = false) {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+    timeZone: APP_TIMEZONE,
   }
   if (includeTime) {
     options.hour = '2-digit'

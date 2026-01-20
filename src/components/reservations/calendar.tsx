@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { APP_TIMEZONE, getTodayInAppTimezone } from '@/lib/utils'
 
 interface CalendarProps {
   selectedDate: Date | null
@@ -49,18 +50,15 @@ export function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
   }
 
   const isToday = (date: Date) => {
-    const today = new Date()
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    )
+    const todayStr = getTodayInAppTimezone()
+    const dateStr = date.toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
+    return dateStr === todayStr
   }
 
   const isPast = (date: Date) => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    return date < today
+    const todayStr = getTodayInAppTimezone()
+    const dateStr = date.toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
+    return dateStr < todayStr
   }
 
   const isSelected = (date: Date) => {
@@ -85,6 +83,7 @@ export function Calendar({ selectedDate, onDateSelect }: CalendarProps) {
               {currentMonth.toLocaleDateString('en-US', {
                 month: 'long',
                 year: 'numeric',
+                timeZone: APP_TIMEZONE,
               })}
             </h3>
           </div>

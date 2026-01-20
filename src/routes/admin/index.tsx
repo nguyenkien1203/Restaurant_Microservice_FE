@@ -19,6 +19,7 @@ import { AdminPageHeader } from '@/components/admin/admin-page-header'
 import { getMyProfile, getAllProfiles } from '@/lib/api/profile'
 import { getAdminOrders } from '@/lib/api/order'
 import type { Order } from '@/lib/types/order'
+import { APP_TIMEZONE, getTodayInAppTimezone } from '@/lib/utils'
 
 export const Route = createFileRoute('/admin/')({
   component: AdminDashboard,
@@ -53,23 +54,25 @@ function AdminDashboard() {
 
   // Calculate stats from real data
   const stats = useMemo(() => {
-    const now = new Date()
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const yesterdayStart = new Date(todayStart)
-    yesterdayStart.setDate(yesterdayStart.getDate() - 1)
-    const yesterdayEnd = new Date(todayStart)
+    const todayStr = getTodayInAppTimezone()
+    const todayDate = new Date(todayStr + 'T00:00:00')
+    // Get yesterday's date string in UTC+7
+    const yesterdayDate = new Date(todayDate)
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+    const yesterdayStr = yesterdayDate.toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
+    const yesterdayStartDate = new Date(yesterdayStr + 'T00:00:00')
 
-    // Filter orders by date
+    // Filter orders by date (comparing date strings in UTC+7)
     const todayOrders = orders.filter((order) => {
       if (!order.createdAt) return false
-      const orderDate = new Date(order.createdAt)
-      return orderDate >= todayStart
+      const orderDateStr = new Date(order.createdAt).toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
+      return orderDateStr === todayStr
     })
 
     const yesterdayOrders = orders.filter((order) => {
       if (!order.createdAt) return false
-      const orderDate = new Date(order.createdAt)
-      return orderDate >= yesterdayStart && orderDate < todayStart
+      const orderDateStr = new Date(order.createdAt).toLocaleDateString('en-CA', { timeZone: APP_TIMEZONE })
+      return orderDateStr === yesterdayStr
     })
 
     // Calculate revenue (only paid orders)
