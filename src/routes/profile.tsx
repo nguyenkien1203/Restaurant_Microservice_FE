@@ -34,8 +34,8 @@ type TabType =
   | 'reservations'
   | 'orders'
   | 'settings'
-  | 'addresses'
-  | 'payment'
+  // | 'addresses'
+  // | 'payment'
 
 export const Route = createFileRoute('/profile')({
   component: ProfilePage,
@@ -45,8 +45,8 @@ export const Route = createFileRoute('/profile')({
       'reservations',
       'orders',
       'settings',
-      'addresses',
-      'payment',
+      // 'addresses',
+      // 'payment',
     ]
     const tab = search.tab as TabType | undefined
     return {
@@ -60,8 +60,8 @@ const sidebarItems: SidebarItem[] = [
   { id: 'reservations', label: 'Reservations', icon: CalendarDays },
   { id: 'orders', label: 'Order History', icon: ClipboardList },
   { id: 'settings', label: 'Profile Settings', icon: UserCog },
-  { id: 'addresses', label: 'Addresses', icon: MapPin },
-  { id: 'payment', label: 'Payment Methods', icon: CreditCard },
+  // { id: 'addresses', label: 'Addresses', icon: MapPin },
+  // { id: 'payment', label: 'Payment Methods', icon: CreditCard },
 ]
 
 function ProfilePage() {
@@ -222,9 +222,9 @@ function ProfilePage() {
         />
       )}
 
-      {activeTab === 'addresses' && <AddressesTab address={profile?.address} />}
+      {/* {activeTab === 'addresses' && <AddressesTab address={profile?.address} />}
 
-      {activeTab === 'payment' && <PaymentMethodsTab />}
+      {activeTab === 'payment' && <PaymentMethodsTab />} */}
     </PageWithSidebar>
   )
 }
