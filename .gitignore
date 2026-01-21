@@ -8,3 +8,7 @@ count.txt
 .nitro
 .tanstack
 .wrangler
+
+# Deployment artifacts
+deploy-*.zip
+Dockerrun.aws.json
